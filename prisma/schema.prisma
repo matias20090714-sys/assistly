@@ -1,0 +1,178 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum PlanType {
+  TRIAL
+  STARTER
+  PRO
+  BUSINESS
+  EXPIRED
+}
+
+enum SourceType {
+  TEXT
+  FAQ
+  PDF
+  URL
+}
+
+enum IngestionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SenderType {
+  USER
+  BOT
+  AGENT
+}
+
+enum ConversationStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+model User {
+  id           String            @id @default(uuid()) @db.Uuid
+  clerkUserId  String            @unique
+  email        String            @unique
+  name         String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  memberships  WorkspaceMember[]
+}
+
+model Workspace {
+  id                    String            @id @default(uuid()) @db.Uuid
+  name                  String
+  slug                  String            @unique
+  category              String?
+  billingCustomerId     String?           @unique
+  billingSubscriptionId String?           @unique
+  plan                  PlanType          @default(TRIAL)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  members               WorkspaceMember[]
+  bots                  Bot[]
+  subscriptions         Subscription[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role      @default(MEMBER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, userId])
+}
+
+model Bot {
+  id              String         @id @default(uuid()) @db.Uuid
+  workspaceId     String         @db.Uuid
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name            String
+  systemPrompt    String         @db.Text
+  greetingMessage String         @db.VarChar(500)
+  themeColor      String         @default("#0f172a") @db.VarChar(7)
+  isActive        Boolean        @default(true)
+  allowedDomains  String[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  documents       Document[]
+  conversations   Conversation[]
+  faqs            FAQ[]
+}
+
+model Document {
+  id           String          @id @default(uuid()) @db.Uuid
+  botId        String          @db.Uuid
+  bot          Bot             @relation(fields: [botId], references: [id], onDelete: Cascade)
+  type         SourceType
+  name         String
+  content      String?         @db.Text
+  fileUrl      String?         @db.Text
+  status       IngestionStatus @default(PENDING)
+  errorMessage String?         @db.Text
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  chunks       DocumentChunk[]
+}
+
+model DocumentChunk {
+  id         String                 @id @default(uuid()) @db.Uuid
+  documentId String                 @db.Uuid
+  document   Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String                 @db.Text
+  embedding  Unsupported("vector")?
+  createdAt  DateTime               @default(now())
+}
+
+model Conversation {
+  id                 String             @id @default(uuid()) @db.Uuid
+  botId              String             @db.Uuid
+  bot                Bot                @relation(fields: [botId], references: [id], onDelete: Cascade)
+  customerIdentifier String
+  customerName       String?            @db.VarChar(150)
+  customerEmail      String?
+  status             ConversationStatus @default(ACTIVE)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  messages           Message[]
+
+  @@index([botId, status])
+  @@index([customerIdentifier])
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         SenderType
+  content        String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt(sort: Asc)])
+}
+
+model FAQ {
+  id        String   @id @default(uuid()) @db.Uuid
+  botId     String   @db.Uuid
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  question  String   @db.Text
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id                     String    @id @default(uuid()) @db.Uuid
+  workspaceId            String    @db.Uuid
+  workspace              Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerSubscriptionId String    @unique
+  providerName           String    @default("paddle")
+  status                 String
+  priceId                String
+  currentPeriodEnd       DateTime
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
