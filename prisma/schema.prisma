@@ -114,7 +114,6 @@ model Document {
   status       IngestionStatus @default(PENDING)
   errorMessage String?         @db.Text
   createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
   chunks       DocumentChunk[]
 }
 
