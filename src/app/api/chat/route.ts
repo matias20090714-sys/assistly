@@ -5,7 +5,7 @@ import { generateBotResponse } from '@/services/ai';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { botId, conversationId, message } = body;
+    const { botId, conversationId, message, history } = body;
 
     if (!botId) {
       return NextResponse.json(
@@ -21,6 +21,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // --- CASO DE DEMOSTRACIÓN (DEMO) ---
+    if (botId === 'demo') {
+      const activeConversationId = conversationId || 'demo-session';
+      const response = await generateBotResponse('demo', activeConversationId, message, history);
+      return NextResponse.json({
+        success: true,
+        conversationId: activeConversationId,
+        response: response || 'No tengo esa información. ¿Deseas que un asesor del negocio te ayude?',
+        status: 'BOT',
+      });
+    }
+
+    // --- CASO DE BOT REAL ---
     let activeConversationId = conversationId;
 
     // 1. Si no hay conversación activa, crear una nueva
@@ -52,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Invocar el motor de IA (que guarda los mensajes de USER y BOT en la BD)
-    const response = await generateBotResponse(botId, activeConversationId, message);
+    const response = await generateBotResponse(botId, activeConversationId, message, history);
 
     return NextResponse.json({
       success: true,

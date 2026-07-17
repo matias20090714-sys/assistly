@@ -135,12 +135,112 @@ export async function findRelevantChunks(
   }
 }
 
+// Base de conocimiento precargada sobre Assistly para el asistente de demostración (demo)
+const ASSISTLY_DEMO_KNOWLEDGE = `
+¿Qué es Assistly?
+Assistly es una plataforma SaaS moderna diseñada para que cualquier negocio pueda crear, entrenar y desplegar empleados virtuales impulsados por Inteligencia Artificial (IA) con el fin de automatizar el soporte técnico, comercial y de atención al cliente.
+
+¿Para qué sirve?
+Sirve para contestar consultas de clientes de forma instantánea 24/7 de forma precisa, liberando tiempo del equipo de soporte humano. También ayuda a capturar leads, calificar interesados y, en caso de conversaciones complejas, permite que un operador humano tome el control del chat manualmente.
+
+¿Cómo funciona?
+1. Creación: El usuario crea su bot configurando el nombre y logo de su negocio.
+2. Entrenamiento ("Enseñar a Assistly"): Se alimenta al asistente con archivos PDF, preguntas frecuentes (FAQ), textos escritos a mano o indicando una URL web.
+3. Inserción: El sistema genera una única línea de código <script> que se copia de la sección de Ajustes y se pega en el HTML, WordPress o Shopify del negocio.
+4. Respuesta Inteligente: Cuando el cliente escribe, el motor busca fragmentos relevantes en la base de conocimiento y genera una respuesta usando GPT-4o-mini de OpenAI sin inventar información.
+
+Principales funciones:
+- Multi-formato de aprendizaje: FAQs, texto manual, archivos PDF y crawler/analizador automático de URLs.
+- Inbox multicanal: Bandeja de entrada en tiempo real con buscador, filtros y chat.
+- Toma de control humana ("Pausar IA"): Botón para que los operadores asuman el control del chat y la IA deje de responder temporalmente.
+- Widget personalizable: Burbuja de chat adaptable a móviles con persistencia de historial e indicador de escritura animado.
+- Ajustes de cuenta: Pestañas para configurar datos de perfil, preferencias de idiomas, zona horaria y tema (Claro/Oscuro/Sistema).
+
+Cómo entrenar al asistente:
+Entra al módulo "Enseñar a Assistly", selecciona la tarjeta del método de aprendizaje que prefieras (FAQ, Texto, PDF o URL), ingresa la información y guárdala. Verás la animación "Assistly está aprendiendo..." y una vez terminado el bot estará listo para responder clientes.
+
+Cómo instalar el widget:
+Copia la etiqueta script de integración desde la pestaña general de Ajustes y pégala en tu código HTML antes de cerrar las etiquetas </head> o <body>. Ejemplo:
+<script src="http://localhost:3000/widget.js" data-bot-id="TU_BOT_ID" defer></script>
+
+Planes disponibles:
+- Plan Free ($0/mes): 1 Bot activo, 50 chats al mes, carga de texto y FAQs.
+- Plan Starter: Pre-habilitado en base de datos. Permite 1 bot activo y 200 chats/mes.
+- Plan Pro ($19/mes): 3 Bots activos, chats ilimitados (política de uso justo), crawler de URLs y soporte prioritario.
+- Plan Business: 10 bots, chats ilimitados, personalización de colores/branding avanzada y soporte prioritario.
+
+Información de contacto de ejemplo:
+Puedes contactar con el equipo comercial o de soporte de Assistly escribiendo a: soporte@assistly.com o visitando la web oficial de soporte: https://assistly.com
+`.trim();
+
 // Genera la respuesta del Asistente Virtual usando RAG y OpenAI
 export async function generateBotResponse(
   botId: string,
   conversationId: string,
-  messageContent: string
+  messageContent: string,
+  historyOverride?: { sender: 'USER' | 'BOT'; content: string }[]
 ) {
+  const fallbackMessage = 'No tengo esa información. ¿Deseas que un asesor del negocio te ayude?';
+
+  // --- CASO DE DEMOSTRACIÓN (DEMO) ---
+  if (botId === 'demo') {
+    const systemPrompt = `
+Eres un empleado virtual inteligente llamado "Assistly Bot" para el negocio de demostración "Assistly".
+Respondes a las consultas de los clientes de forma profesional, concisa, amable y servicial.
+
+REGLAS DE ORO:
+1. Responde a la pregunta del cliente basándote ÚNICAMENTE en la información proporcionada en la sección CONTEXTO de abajo.
+2. Si el CONTEXTO no contiene información suficiente para responder a la consulta del cliente de forma certera, debes responder EXACTAMENTE con esta frase y nada más:
+"${fallbackMessage}"
+3. Nunca inventes información. Si la respuesta no está explícitamente en el CONTEXTO, no intentes adivinar ni dar respuestas generales. Aplica la regla 2.
+4. Mantén tus respuestas breves y directas.
+
+CONTEXTO:
+${ASSISTLY_DEMO_KNOWLEDGE}
+    `.trim();
+
+    let botReply = '';
+
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'mock-key') {
+      console.warn('Saltando llamada a OpenAI por falta de API Key válida en el demo. Usando respuestas locales simuladas.');
+      const lowerQuery = messageContent.toLowerCase();
+      if (lowerQuery.includes('qué es') || lowerQuery.includes('que es') || lowerQuery.includes('assistly')) {
+        botReply = 'Assistly es una plataforma SaaS moderna que permite crear, entrenar y desplegar empleados virtuales con IA para automatizar el soporte de tu negocio.';
+      } else if (lowerQuery.includes('planes') || lowerQuery.includes('precio') || lowerQuery.includes('costo') || lowerQuery.includes('free') || lowerQuery.includes('pro')) {
+        botReply = 'Ofrecemos el Plan Free ($0/mes) con 1 bot y 50 chats, y planes futuros como Starter, Pro ($19/mes) con chats ilimitados y crawler de URLs, y Business.';
+      } else if (lowerQuery.includes('contacto') || lowerQuery.includes('soporte') || lowerQuery.includes('correo') || lowerQuery.includes('email')) {
+        botReply = 'Puedes contactar con el equipo comercial o de soporte de Assistly escribiendo a: soporte@assistly.com o visitando la web oficial: https://assistly.com.';
+      } else if (lowerQuery.includes('entrenar') || lowerQuery.includes('enseñar') || lowerQuery.includes('aprende')) {
+        botReply = 'Puedes entrenar al bot en la sección "Enseñar a Assistly" usando textos, preguntas frecuentes (FAQs), documentos PDF o ingresando la URL de tu sitio web.';
+      } else if (lowerQuery.includes('instalar') || lowerQuery.includes('widget') || lowerQuery.includes('script') || lowerQuery.includes('html')) {
+        botReply = 'Para instalar el widget, copia el script inyectable en Ajustes y pégalo antes del cierre de </head> o <body> en el HTML de tu sitio.';
+      } else {
+        botReply = fallbackMessage;
+      }
+    } else {
+      const historyList = historyOverride || [];
+      const messagesForOpenAI = [
+        { role: 'system' as const, content: systemPrompt },
+        ...historyList.map((m) => ({
+          role: m.sender === 'USER' ? ('user' as const) : ('assistant' as const),
+          content: m.content,
+        })),
+        { role: 'user' as const, content: messageContent },
+      ];
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: messagesForOpenAI,
+        temperature: 0.1,
+      });
+
+      botReply = response.choices[0]?.message?.content || fallbackMessage;
+    }
+
+    return botReply;
+  }
+
+  // --- CASO DE NEGOCIO REGISTRADO REAL ---
   const bot = await prisma.bot.findUnique({
     where: { id: botId },
     include: { workspace: true },
@@ -173,7 +273,7 @@ export async function generateBotResponse(
   }
 
   // 3. Recuperar historial de mensajes (últimos 8 mensajes para contexto)
-  const history = await prisma.message.findMany({
+  const history = historyOverride || await prisma.message.findMany({
     where: { conversationId },
     orderBy: { createdAt: 'asc' },
     take: 8,
@@ -201,8 +301,6 @@ export async function generateBotResponse(
   }
 
   // 5. Preparar el Prompt del Sistema con las reglas estrictas de Assistly
-  const fallbackMessage = 'No tengo esa información. ¿Deseas que un asesor del negocio te ayude?';
-  
   const systemPrompt = `
 Eres un empleado virtual inteligente llamado "${bot.name}" para el negocio "${bot.workspace.name}".
 Respondes a las consultas de los clientes de forma profesional, concisa, amable y servicial.
@@ -251,7 +349,7 @@ ${context}
     botReply = response.choices[0]?.message?.content || fallbackMessage;
   }
 
-  // 7. Registrar el mensaje generado por el bot
+  // 7. Registrar el mensaje generado por el bot (si no hay override manual de history para preview)
   await prisma.message.create({
     data: {
       conversationId,

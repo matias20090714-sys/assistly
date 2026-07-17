@@ -115,6 +115,10 @@ export function ChatWidgetClient({
           botId,
           conversationId,
           message: userText,
+          history: messages.slice(-8).map((m) => ({
+            sender: m.sender,
+            content: m.content,
+          })),
         }),
       });
 
