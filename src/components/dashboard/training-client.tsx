@@ -62,7 +62,7 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
   // Última actualización
   const lastUpdatedText = React.useMemo(() => {
     if (documents.length === 0) return 'Sin actualizaciones';
-    const dates = documents.map(d => new Date(d.updatedAt).getTime());
+    const dates = documents.map(d => new Date(d.createdAt).getTime());
     const maxDate = new Date(Math.max(...dates));
     return maxDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' de hoy';
   }, [documents]);
@@ -385,7 +385,7 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
                         <span className="text-[10px] uppercase font-bold text-slate-500">{doc.type}</span>
                         <span className="text-[10px] text-muted-foreground">•</span>
                         <span className="text-[10px] text-muted-foreground">
-                          {new Date(doc.updatedAt).toLocaleDateString()} • {(doc.content || '').split(/\s+/).filter(Boolean).length} palabras
+                          {new Date(doc.createdAt).toLocaleDateString()} • {(doc.content || '').split(/\s+/).filter(Boolean).length} palabras
                         </span>
                       </div>
                     </div>
