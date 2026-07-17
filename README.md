@@ -78,4 +78,6 @@ src/
     ```bash
     npm run dev
     ```
+
+<!-- Trigger Vercel Auto-deploy -->
     Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación funcionando.
