@@ -18,7 +18,6 @@ export async function GET() {
       status: 'unhealthy',
       database: 'error',
       message: error.message || 'Unknown database error',
-      stack: error.stack || null,
     }, { status: 500 });
   }
 }
