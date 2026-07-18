@@ -26,7 +26,7 @@ export async function sendMessage(conversationId: string, content: string) {
     },
   });
 
-  revalidatePath('/dashboard/inbox');
+  revalidatePath('/inbox');
   return { success: true, message };
 }
 
@@ -43,7 +43,7 @@ export async function toggleBotControl(conversationId: string, pause: boolean) {
     },
   });
 
-  revalidatePath('/dashboard/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -146,6 +146,6 @@ export async function seedConversations(botId: string) {
     ],
   });
 
-  revalidatePath('/dashboard/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }

@@ -38,7 +38,7 @@ export async function addDocument(
     });
   }
 
-  revalidatePath('/dashboard/training');
+  revalidatePath('/training');
   return { success: true };
 }
 
@@ -69,7 +69,7 @@ export async function updateDocument(
     });
   }
 
-  revalidatePath('/dashboard/training');
+  revalidatePath('/training');
   return { success: true };
 }
 
@@ -80,7 +80,7 @@ export async function deleteDocument(documentId: string) {
     where: { id: documentId },
   });
 
-  revalidatePath('/dashboard/training');
+  revalidatePath('/training');
   return { success: true };
 }
 
@@ -104,6 +104,6 @@ export async function reprocessDocument(documentId: string) {
     });
   }
 
-  revalidatePath('/dashboard/training');
+  revalidatePath('/training');
   return { success: true };
 }

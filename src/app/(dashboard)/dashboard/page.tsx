@@ -130,7 +130,7 @@ export default async function DashboardPage() {
               </p>
             </div>
             <Link
-              href="/dashboard/training"
+              href="/training"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/95 active:scale-95 shrink-0"
             >
               <span>Enseñar sobre mi negocio</span>
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
           <div className="mt-8 pt-4 border-t border-border flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-light">Color del widget: <span className="font-mono text-foreground font-semibold">{bot?.themeColor}</span></span>
             <Link
-              href="/dashboard/chatbots"
+              href="/chatbots"
               className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 font-semibold"
             >
               <span>Personalizar asistente</span>
@@ -261,7 +261,7 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-semibold mb-4">Accesos Rápidos</h2>
             <div className="space-y-3">
               <Link
-                href="/dashboard/training"
+                href="/training"
                 className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20 hover:bg-accent transition-colors group text-sm"
               >
                 <div className="flex items-center gap-3">
@@ -272,7 +272,7 @@ export default async function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/inbox"
+                href="/inbox"
                 className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20 hover:bg-accent transition-colors group text-sm"
               >
                 <div className="flex items-center gap-3">
@@ -283,7 +283,7 @@ export default async function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/settings"
+                href="/settings"
                 className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20 hover:bg-accent transition-colors group text-sm"
               >
                 <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export default async function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold">Conocimiento Cargado</h2>
-              <Link href="/dashboard/training" className="text-xs text-blue-500 hover:text-blue-400 font-semibold">
+              <Link href="/training" className="text-xs text-blue-500 hover:text-blue-400 font-semibold">
                 Ver todas
               </Link>
             </div>
@@ -348,7 +348,7 @@ export default async function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold">Últimas Conversaciones</h2>
-              <Link href="/dashboard/inbox" className="text-xs text-blue-500 hover:text-blue-400 font-semibold">
+              <Link href="/inbox" className="text-xs text-blue-500 hover:text-blue-400 font-semibold">
                 Ver inbox
               </Link>
             </div>

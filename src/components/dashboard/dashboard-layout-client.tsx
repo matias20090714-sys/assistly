@@ -25,10 +25,10 @@ interface SidebarItem {
 
 const navigation: SidebarItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Chatbots', href: '/dashboard/chatbots', icon: Bot },
-  { name: 'Entrenamiento', href: '/dashboard/training', icon: Database },
-  { name: 'Conversaciones', href: '/dashboard/inbox', icon: MessageSquare },
-  { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
+  { name: 'Chatbots', href: '/chatbots', icon: Bot },
+  { name: 'Entrenamiento', href: '/training', icon: Database },
+  { name: 'Conversaciones', href: '/inbox', icon: MessageSquare },
+  { name: 'Configuración', href: '/settings', icon: Settings },
 ];
 
 export function DashboardLayoutClient({
@@ -212,7 +212,7 @@ export function DashboardLayoutClient({
                   <span>Tu prueba gratuita del plan Starter termina en {trialDaysRemaining} {trialDaysRemaining === 1 ? 'día' : 'días'}.</span>
                 </div>
                 <Link
-                  href="/dashboard/settings?tab=account"
+                  href="/settings?tab=account"
                   className="px-3 py-1 rounded-lg bg-primary text-white text-[11px] font-semibold hover:bg-primary/95 transition-all shadow-md shrink-0 ml-4"
                 >
                   Activar Plan Completo
