@@ -409,8 +409,16 @@ ${context}
       
       let matchedLine = '';
       
+      // 0. Qué es / Definición del negocio o chatbot
+      if (cleanQuery.includes('que es') || cleanQuery.includes('de que se trata') || cleanQuery.includes('para que sirve') || cleanQuery.includes('que hace') || cleanQuery.includes('explic') || cleanQuery.includes('definici') || cleanQuery.includes('funciona') || cleanQuery.includes('informacion')) {
+        matchedLine = lines.find((l) => {
+          const cleanLine = normalizeText(l);
+          return cleanLine.includes(normalizeText(bot.name)) || cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('sistema') || cleanLine.includes('negocio') || cleanLine.includes('ayuda');
+        }) || lines[0] || '';
+      }
+
       // 1. Horarios
-      if (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia')) {
+      if (!matchedLine && (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia'))) {
         matchedLine = lines.find((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes('horari') || cleanLine.includes('hora') || cleanLine.includes('abiert') || cleanLine.includes('cerrad') || cleanLine.includes('atencion');
