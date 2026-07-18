@@ -183,6 +183,86 @@ Información de contacto de ejemplo:
 Puedes contactar con el equipo comercial o de soporte de Assistly escribiendo a: soporte@assistly.com o visitando la web oficial de soporte: https://assistly.com
 `.trim();
 
+// Helper para el motor de parsing de texto local (fallback offline)
+function runLocalParser(
+  cleanQuery: string,
+  lines: string[],
+  botName: string,
+  fallbackMessage: string
+): string {
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  };
+  const normalizedBotName = normalizeText(botName);
+  let matchedIndex = -1;
+
+  // 0. Qué es / Definición del negocio o chatbot
+  if (cleanQuery.includes('que es') || cleanQuery.includes('de que se trata') || cleanQuery.includes('para que sirve') || cleanQuery.includes('que hace') || cleanQuery.includes('explic') || cleanQuery.includes('definici') || cleanQuery.includes('funciona') || cleanQuery.includes('informacion')) {
+    matchedIndex = lines.findIndex((l) => {
+      const cleanLine = normalizeText(l);
+      return cleanLine.includes(normalizedBotName) || cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('sistema') || cleanLine.includes('negocio') || cleanLine.includes('ayuda');
+    });
+    
+    if (matchedIndex !== -1 && lines[matchedIndex].includes('Nombre del negocio') && lines.length > matchedIndex + 1) {
+      const betterIndex = lines.slice(matchedIndex + 1).findIndex((l) => {
+        const cleanLine = normalizeText(l);
+        return cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('empleado virtual') || cleanLine.includes('saas');
+      });
+      if (betterIndex !== -1) {
+        matchedIndex = matchedIndex + 1 + betterIndex;
+      }
+    }
+  }
+
+  // 1. Horarios
+  if (matchedIndex === -1 && (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia'))) {
+    matchedIndex = lines.findIndex((l) => {
+      const cleanLine = normalizeText(l);
+      return cleanLine.includes('horari') || cleanLine.includes('hora') || cleanLine.includes('abiert') || cleanLine.includes('cerrad') || cleanLine.includes('atencion');
+    });
+  }
+  
+  // 2. Servicios
+  if (matchedIndex === -1 && (cleanQuery.includes('servici') || cleanQuery.includes('ofrece') || cleanQuery.includes('especialidad') || cleanQuery.includes('hace') || cleanQuery.includes('hacer') || cleanQuery.includes('corte') || cleanQuery.includes('lasana') || cleanQuery.includes('clase') || cleanQuery.includes('grupal'))) {
+    matchedIndex = lines.findIndex((l) => {
+      const cleanLine = normalizeText(l);
+      return cleanLine.includes('servici') || cleanLine.includes('especialidad') || cleanLine.includes('ofrecemos') || cleanLine.includes('clase') || cleanLine.includes('corte') || cleanLine.includes('lasana') || cleanLine.includes('tratamiento');
+    });
+  }
+  
+  // 3. Precios y Envíos
+  if (matchedIndex === -1 && (cleanQuery.includes('preci') || cleanQuery.includes('costo') || cleanQuery.includes('cuesta') || cleanQuery.includes('tarifa') || cleanQuery.includes('valor') || cleanQuery.includes('pase') || cleanQuery.includes('mensual') || cleanQuery.includes('gratis') || cleanQuery.includes('free') || cleanQuery.includes('$') || cleanQuery.includes('envi'))) {
+    matchedIndex = lines.findIndex((l) => {
+      const cleanLine = normalizeText(l);
+      return cleanLine.includes('$') || cleanLine.includes('preci') || cleanLine.includes('costo') || cleanLine.includes('cuesta') || cleanLine.includes('tarifa') || cleanLine.includes('pase') || cleanLine.includes('gratis') || cleanLine.includes('envi');
+    });
+  }
+  
+  // 4. Turnos / Reservas / Contacto / Soporte
+  if (matchedIndex === -1 && (cleanQuery.includes('turn') || cleanQuery.includes('reserv') || cleanQuery.includes('contact') || cleanQuery.includes('email') || cleanQuery.includes('mail') || cleanQuery.includes('correo') || cleanQuery.includes('telefon') || cleanQuery.includes('whatsapp') || cleanQuery.includes('web') || cleanQuery.includes('soporte'))) {
+    matchedIndex = lines.findIndex((l) => {
+      const cleanLine = normalizeText(l);
+      return cleanLine.includes('turn') || cleanLine.includes('reserv') || cleanLine.includes('@') || cleanLine.includes('+') || cleanLine.includes('web') || cleanLine.includes('contact') || cleanLine.includes('llamar') || cleanLine.includes('soporte');
+    });
+  }
+
+  // 5. Obras Sociales / Prepaga
+  if (matchedIndex === -1 && (cleanQuery.includes('social') || cleanQuery.includes('obra') || cleanQuery.includes('osde') || cleanQuery.includes('swiss') || cleanQuery.includes('galeno') || cleanQuery.includes('medicus') || cleanQuery.includes('prepaga') || cleanQuery.includes('cobertur'))) {
+    matchedIndex = lines.findIndex((l) => {
+      const cleanLine = normalizeText(l);
+      return cleanLine.includes('social') || cleanLine.includes('obra') || cleanLine.includes('osde') || cleanLine.includes('swiss') || cleanLine.includes('galeno') || cleanLine.includes('medicus') || cleanLine.includes('prepaga') || cleanLine.includes('atendemos');
+    });
+  }
+
+  if (matchedIndex !== -1) {
+    return lines.slice(matchedIndex, matchedIndex + 5).join('\n');
+  }
+  return fallbackMessage;
+}
+
 // Genera la respuesta del Asistente Virtual usando RAG y OpenAI
 export async function generateBotResponse(
   botId: string,
@@ -376,22 +456,22 @@ CONTEXTO DE CONOCIMIENTO:
 ${context}
   `.trim();
 
-  // 6. Si no hay OPENAI_API_KEY, devolvemos una respuesta simulada basada en un RAG sintáctico local de consulta al contexto (para desarrollo local)
+  // 6. Si no hay OPENAI_API_KEY o falla la llamada, devolvemos una respuesta simulada basada en un RAG sintáctico local (para desarrollo o cuota agotada)
   let botReply = '';
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  };
+  const cleanQuery = normalizeText(messageContent);
+  const lines = context.split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !normalizeText(l).startsWith('informacion de'));
+
   if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
     console.warn('Saltando llamada a OpenAI por falta de API Key válida. Usando analizador de contexto local.');
     
-    // Función auxiliar para normalizar texto removiendo acentos y diacríticos
-    const normalizeText = (text: string) => {
-      return text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-    };
-    
-    const cleanQuery = normalizeText(messageContent);
-    
-    // Saludos y despedidas rápidas con extracción dinámica de rol desde el prompt
     if (cleanQuery === 'hola' || cleanQuery.startsWith('hola ')) {
       let role = 'asistente virtual';
       const promptLower = baseInstruction.toLowerCase();
@@ -406,96 +486,46 @@ ${context}
     } else if (cleanQuery === 'gracias' || cleanQuery === 'muchas gracias' || cleanQuery === 'adios' || cleanQuery === 'chau') {
       botReply = '¡Con gusto! Quedo a tu disposición si necesitas saber algo más sobre nuestro negocio.';
     } else {
-      // Buscar en las líneas del contexto (excluyendo las de cabecera)
-      const lines = context.split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0 && !normalizeText(l).startsWith('informacion de'));
-      
-      let matchedIndex = -1;
-      
-      // 0. Qué es / Definición del negocio o chatbot
-      if (cleanQuery.includes('que es') || cleanQuery.includes('de que se trata') || cleanQuery.includes('para que sirve') || cleanQuery.includes('que hace') || cleanQuery.includes('explic') || cleanQuery.includes('definici') || cleanQuery.includes('funciona') || cleanQuery.includes('informacion')) {
-        matchedIndex = lines.findIndex((l) => {
-          const cleanLine = normalizeText(l);
-          return cleanLine.includes(normalizeText(bot.name)) || cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('sistema') || cleanLine.includes('negocio') || cleanLine.includes('ayuda');
-        });
-        
-        if (matchedIndex !== -1 && lines[matchedIndex].includes('Nombre del negocio') && lines.length > matchedIndex + 1) {
-          const betterIndex = lines.slice(matchedIndex + 1).findIndex((l) => {
-            const cleanLine = normalizeText(l);
-            return cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('empleado virtual') || cleanLine.includes('saas');
-          });
-          if (betterIndex !== -1) {
-            matchedIndex = matchedIndex + 1 + betterIndex;
-          }
-        }
-      }
-
-      // 1. Horarios
-      if (matchedIndex === -1 && (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia'))) {
-        matchedIndex = lines.findIndex((l) => {
-          const cleanLine = normalizeText(l);
-          return cleanLine.includes('horari') || cleanLine.includes('hora') || cleanLine.includes('abiert') || cleanLine.includes('cerrad') || cleanLine.includes('atencion');
-        });
-      }
-      
-      // 2. Servicios
-      if (matchedIndex === -1 && (cleanQuery.includes('servici') || cleanQuery.includes('ofrece') || cleanQuery.includes('especialidad') || cleanQuery.includes('hace') || cleanQuery.includes('hacer') || cleanQuery.includes('corte') || cleanQuery.includes('lasana') || cleanQuery.includes('clase') || cleanQuery.includes('grupal'))) {
-        matchedIndex = lines.findIndex((l) => {
-          const cleanLine = normalizeText(l);
-          return cleanLine.includes('servici') || cleanLine.includes('especialidad') || cleanLine.includes('ofrecemos') || cleanLine.includes('clase') || cleanLine.includes('corte') || cleanLine.includes('lasana') || cleanLine.includes('tratamiento');
-        });
-      }
-      
-      // 3. Precios y Envíos
-      if (matchedIndex === -1 && (cleanQuery.includes('preci') || cleanQuery.includes('costo') || cleanQuery.includes('cuesta') || cleanQuery.includes('tarifa') || cleanQuery.includes('valor') || cleanQuery.includes('pase') || cleanQuery.includes('mensual') || cleanQuery.includes('gratis') || cleanQuery.includes('free') || cleanQuery.includes('$') || cleanQuery.includes('envi'))) {
-        matchedIndex = lines.findIndex((l) => {
-          const cleanLine = normalizeText(l);
-          return cleanLine.includes('$') || cleanLine.includes('preci') || cleanLine.includes('costo') || cleanLine.includes('cuesta') || cleanLine.includes('tarifa') || cleanLine.includes('pase') || cleanLine.includes('gratis') || cleanLine.includes('envi');
-        });
-      }
-      
-      // 4. Turnos / Reservas / Contacto / Soporte
-      if (matchedIndex === -1 && (cleanQuery.includes('turn') || cleanQuery.includes('reserv') || cleanQuery.includes('contact') || cleanQuery.includes('email') || cleanQuery.includes('mail') || cleanQuery.includes('correo') || cleanQuery.includes('telefon') || cleanQuery.includes('whatsapp') || cleanQuery.includes('web') || cleanQuery.includes('soporte'))) {
-        matchedIndex = lines.findIndex((l) => {
-          const cleanLine = normalizeText(l);
-          return cleanLine.includes('turn') || cleanLine.includes('reserv') || cleanLine.includes('@') || cleanLine.includes('+') || cleanLine.includes('web') || cleanLine.includes('contact') || cleanLine.includes('llamar') || cleanLine.includes('soporte');
-        });
-      }
-      
-      // 5. Obras Sociales / Prepaga
-      if (matchedIndex === -1 && (cleanQuery.includes('social') || cleanQuery.includes('obra') || cleanQuery.includes('osde') || cleanQuery.includes('swiss') || cleanQuery.includes('galeno') || cleanQuery.includes('medicus') || cleanQuery.includes('prepaga') || cleanQuery.includes('cobertur'))) {
-        matchedIndex = lines.findIndex((l) => {
-          const cleanLine = normalizeText(l);
-          return cleanLine.includes('social') || cleanLine.includes('obra') || cleanLine.includes('osde') || cleanLine.includes('swiss') || cleanLine.includes('galeno') || cleanLine.includes('medicus') || cleanLine.includes('prepaga') || cleanLine.includes('atendemos');
-        });
-      }
-
-      if (matchedIndex !== -1) {
-        // Tomar la línea y las siguientes 4 líneas del contexto (o hasta el final del archivo)
-        botReply = lines.slice(matchedIndex, matchedIndex + 5).join('\n');
-      } else {
-        botReply = fallbackMessage;
-      }
+      botReply = runLocalParser(cleanQuery, lines, bot.name, fallbackMessage);
     }
   } else {
-    // Llamar a OpenAI Chat Completion
-    const messagesForOpenAI = [
-      { role: 'system' as const, content: systemPrompt },
-      ...history.map((m) => ({
-        role: m.sender === 'USER' ? ('user' as const) : ('assistant' as const),
-        content: m.content,
-      })),
-      { role: 'user' as const, content: messageContent },
-    ];
+    try {
+      // Llamar a OpenAI Chat Completion
+      const messagesForOpenAI = [
+        { role: 'system' as const, content: systemPrompt },
+        ...history.map((m) => ({
+          role: m.sender === 'USER' ? ('user' as const) : ('assistant' as const),
+          content: m.content,
+        })),
+        { role: 'user' as const, content: messageContent },
+      ];
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: messagesForOpenAI,
-      temperature: 0.1, // Baja temperatura para evitar alucinaciones
-    });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: messagesForOpenAI,
+        temperature: 0.1, // Baja temperatura para evitar alucinaciones
+      });
 
-    botReply = response.choices[0]?.message?.content || fallbackMessage;
+      botReply = response.choices[0]?.message?.content || fallbackMessage;
+    } catch (err) {
+      console.warn('Error llamando a OpenAI (ej. quota insuficiente, error de red). Usando fallback local.', err);
+      if (cleanQuery === 'hola' || cleanQuery.startsWith('hola ')) {
+        let role = 'asistente virtual';
+        const promptLower = baseInstruction.toLowerCase();
+        if (promptLower.includes('mozo')) role = 'mozo virtual';
+        else if (promptLower.includes('estilista')) role = 'estilista virtual';
+        else if (promptLower.includes('recepcionista')) role = 'recepcionista médico virtual';
+        else if (promptLower.includes('personal shopper')) role = 'personal shopper virtual';
+        else if (promptLower.includes('entrenador')) role = 'entrenador virtual';
+        else if (promptLower.includes('consultor')) role = 'consultor virtual';
+        
+        botReply = `¡Hola! Soy ${bot.name}, tu ${role}. ¿En qué puedo colaborar contigo hoy?`;
+      } else if (cleanQuery === 'gracias' || cleanQuery === 'muchas gracias' || cleanQuery === 'adios' || cleanQuery === 'chau') {
+        botReply = '¡Con gusto! Quedo a tu disposición si necesitas saber algo más sobre nuestro negocio.';
+      } else {
+        botReply = runLocalParser(cleanQuery, lines, bot.name, fallbackMessage);
+      }
+    }
   }
 
   // 7. Registrar el mensaje generado por el bot (si no hay override manual de history para preview)
