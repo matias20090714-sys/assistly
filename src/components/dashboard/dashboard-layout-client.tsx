@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Clock,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -33,9 +34,11 @@ const navigation: SidebarItem[] = [
 export function DashboardLayoutClient({
   children,
   workspaceName,
+  trialDaysRemaining,
 }: {
   children: React.ReactNode;
   workspaceName: string;
+  trialDaysRemaining?: number | null;
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -202,6 +205,20 @@ export function DashboardLayoutClient({
         {/* Dynamic Page view wrapper */}
         <main className="flex-1 overflow-y-auto bg-muted/20 p-4 sm:p-6 md:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
+            {trialDaysRemaining !== null && trialDaysRemaining !== undefined && (
+              <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary animate-pulse" />
+                  <span>Tu prueba gratuita del plan Starter termina en {trialDaysRemaining} {trialDaysRemaining === 1 ? 'día' : 'días'}.</span>
+                </div>
+                <Link
+                  href="/dashboard/settings?tab=account"
+                  className="px-3 py-1 rounded-lg bg-primary text-white text-[11px] font-semibold hover:bg-primary/95 transition-all shadow-md shrink-0 ml-4"
+                >
+                  Activar Plan Completo
+                </Link>
+              </div>
+            )}
             {children}
           </div>
         </main>

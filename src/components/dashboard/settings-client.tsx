@@ -31,6 +31,7 @@ interface SettingsClientProps {
     slug: string;
     category: string | null;
     plan: string;
+    hasUsedTrial: boolean;
   };
 }
 
@@ -179,6 +180,32 @@ export function SettingsClient({ user, workspace }: SettingsClientProps) {
       window.location.href = '/';
     } else if (confirmDelete !== null) {
       alert('Confirmación incorrecta. Cancelando eliminación.');
+    }
+  };
+
+  const [isStartingTrial, setIsStartingTrial] = React.useState(false);
+
+  const handleStartTrial = async () => {
+    if (isStartingTrial) return;
+    setIsStartingTrial(true);
+    try {
+      const res = await fetch('/api/subscriptions/trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: workspace.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('¡Prueba gratuita de 7 días del plan Starter activada exitosamente!');
+        window.location.reload();
+      } else {
+        alert(`Error al iniciar la prueba: ${data.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión con el servidor al iniciar la prueba.');
+    } finally {
+      setIsStartingTrial(false);
     }
   };
 
@@ -570,8 +597,11 @@ export function SettingsClient({ user, workspace }: SettingsClientProps) {
                   )}
                   <div className="space-y-3">
                     <div>
-                      <h4 className="font-bold text-base">Starter</h4>
-                      <p className="text-[11px] text-muted-foreground">Plan inicial para pequeños negocios</p>
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-base">Starter</h4>
+                        <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">7 días gratis</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">Plan inicial para pequeños negocios</p>
                     </div>
                     <div className="flex items-baseline">
                       <span className="text-2xl font-extrabold">$9.99</span>
@@ -590,7 +620,18 @@ export function SettingsClient({ user, workspace }: SettingsClientProps) {
                     </div>
                   ) : (
                     <div className="mt-5">
-                      <div id="paypal-button-starter" className="relative z-10" />
+                      {!workspace.hasUsedTrial ? (
+                        <button
+                          type="button"
+                          onClick={handleStartTrial}
+                          disabled={isStartingTrial}
+                          className="w-full inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-white shadow-md hover:bg-primary/95 transition-all disabled:opacity-50 active:scale-95"
+                        >
+                          {isStartingTrial ? 'Iniciando...' : 'Iniciar 7 Días Gratis'}
+                        </button>
+                      ) : (
+                        <div id="paypal-button-starter" className="relative z-10" />
+                      )}
                     </div>
                   )}
                 </div>

@@ -148,12 +148,16 @@ export default function LandingPage() {
             {/* Plan Starter */}
             <div className="flex flex-col p-8 rounded-3xl border border-border bg-card text-card-foreground relative overflow-hidden">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold">Starter</h3>
+                <div className="flex justify-between items-start">
+                  <h3 className="text-2xl font-bold">Starter</h3>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">7 días gratis</span>
+                </div>
                 <p className="text-muted-foreground text-sm mt-1">Ideal para pequeños negocios</p>
                 <div className="mt-4 flex items-baseline">
                   <span className="text-4xl font-extrabold">$9.99</span>
                   <span className="text-muted-foreground ml-1 text-sm">/ mes</span>
                 </div>
+                <p className="text-[10px] text-primary/80 font-medium mt-1">✓ Incluye 7 días gratis de prueba</p>
               </div>
               <ul className="space-y-3 mb-8 text-sm text-muted-foreground flex-grow">
                 <li className="flex items-center gap-2">✓ 1 Bot Activo</li>
@@ -165,7 +169,7 @@ export default function LandingPage() {
                 href="/dashboard"
                 className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-6 font-medium text-foreground transition-all hover:bg-accent active:scale-98"
               >
-                Comenzar con Starter
+                Probar 7 Días Gratis
               </Link>
             </div>
 
@@ -181,6 +185,7 @@ export default function LandingPage() {
                   <span className="text-4xl font-extrabold">$19.99</span>
                   <span className="text-muted-foreground ml-1 text-sm">/ mes</span>
                 </div>
+                <p className="text-[10px] text-muted-foreground/80 font-medium mt-1">⚡ Pago inmediato (sin trial)</p>
               </div>
               <ul className="space-y-3 mb-8 text-sm text-muted-foreground flex-grow">
                 <li className="flex items-center gap-2 text-foreground font-medium">✓ 3 Bots Activos</li>
@@ -205,6 +210,7 @@ export default function LandingPage() {
                   <span className="text-4xl font-extrabold">$49.99</span>
                   <span className="text-muted-foreground ml-1 text-sm">/ mes</span>
                 </div>
+                <p className="text-[10px] text-muted-foreground/80 font-medium mt-1">⚡ Pago inmediato (sin trial)</p>
               </div>
               <ul className="space-y-3 mb-8 text-sm text-muted-foreground flex-grow">
                 <li className="flex items-center gap-2">✓ 10 Bots Activos</li>

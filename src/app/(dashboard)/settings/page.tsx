@@ -28,12 +28,20 @@ export default async function SettingsPage() {
     redirect('/onboarding');
   }
 
+  const trialSub = await prisma.subscription.findFirst({
+    where: {
+      workspaceId: membership.workspace.id,
+      priceId: 'P-5YT747867K2659343NJNPIQY',
+    },
+  });
+
   const workspace = {
     id: membership.workspace.id,
     name: membership.workspace.name,
     slug: membership.workspace.slug,
     category: membership.workspace.category,
     plan: membership.workspace.plan,
+    hasUsedTrial: !!trialSub,
   };
 
   const user = {
