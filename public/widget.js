@@ -1,15 +1,16 @@
 (function () {
   // 1. Obtener atributos del script de inyección
-  const scriptTag = document.currentScript;
-  if (!scriptTag) return;
+  const scriptTag = document.currentScript || document.querySelector('script[src*="widget.js"]');
 
-  const botId = scriptTag.getAttribute('data-bot-id') || 'demo';
-  const scriptSrc = scriptTag.src;
+  const botId = scriptTag ? (scriptTag.getAttribute('data-bot-id') || 'demo') : 'demo';
   
   // Extraer la URL base de Assistly
-  const parser = document.createElement('a');
-  parser.href = scriptSrc;
-  const baseUrl = `${parser.protocol}//${parser.host}`;
+  let baseUrl = window.location.origin;
+  if (scriptTag && scriptTag.src && scriptTag.src.startsWith('http')) {
+    const parser = document.createElement('a');
+    parser.href = scriptTag.src;
+    baseUrl = `${parser.protocol}//${parser.host}`;
+  }
 
   // 2. Inyectar estilos CSS para el widget flotante en la página del cliente
   const style = document.createElement('style');
