@@ -53,7 +53,7 @@ export default async function TrainingPage() {
         </p>
       </div>
 
-      <TrainingClient botId={bot.id} initialDocuments={documents} />
+      <TrainingClient botId={bot.id} initialDocuments={documents} workspacePlan={membership.workspace.plan} />
     </div>
   );
 }

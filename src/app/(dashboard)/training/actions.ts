@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { SourceType } from '@prisma/client';
 import { processDocumentChunks } from '@/services/ai';
+import { PLAN_LIMITS } from '@/services/subscription';
 
 export async function addDocument(
   botId: string,
@@ -14,6 +15,23 @@ export async function addDocument(
 ) {
   if (!botId) throw new Error('El ID del bot es requerido.');
   if (!name.trim()) throw new Error('El nombre de la fuente es requerido.');
+
+  // 1. Validar el bot y los límites del plan del workspace
+  const bot = await prisma.bot.findUnique({
+    where: { id: botId },
+    include: {
+      workspace: true,
+    },
+  });
+
+  if (!bot) throw new Error('El bot especificado no existe.');
+
+  const plan = bot.workspace.plan;
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.TRIAL;
+
+  if (!limits.allowedSources.includes(type)) {
+    throw new Error(`Tu plan actual (${limits.name}) no tiene permitido cargar fuentes de tipo ${type}. Por favor, actualiza tu plan en Ajustes.`);
+  }
 
   const doc = await prisma.document.create({
     data: {

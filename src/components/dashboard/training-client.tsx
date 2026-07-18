@@ -25,18 +25,44 @@ import {
 interface TrainingClientProps {
   botId: string;
   initialDocuments: Document[];
+  workspacePlan: string;
 }
 
-export function TrainingClient({ botId, initialDocuments }: TrainingClientProps) {
+export function TrainingClient({ botId, initialDocuments, workspacePlan }: TrainingClientProps) {
   const router = useRouter();
   const [documents, setDocuments] = React.useState<Document[]>(initialDocuments);
   
   // Modales
   const [activeModal, setActiveModal] = React.useState<'faq' | 'text' | 'pdf' | 'url' | 'edit-faq' | 'edit-text' | null>(null);
   const [selectedDoc, setSelectedDoc] = React.useState<Document | null>(null);
+  const [upgradeMessage, setUpgradeMessage] = React.useState<string | null>(null);
 
   // Estados de animación de aprendizaje
   const [learningStep, setLearningStep] = React.useState<'idle' | 'learning' | 'ready'>('idle');
+
+  const isSourceAllowed = (type: SourceType) => {
+    if (workspacePlan === 'PRO' || workspacePlan === 'BUSINESS') return true;
+    if (workspacePlan === 'STARTER') return type !== 'URL';
+    if (workspacePlan === 'TRIAL') return type === 'TEXT' || type === 'FAQ';
+    return false;
+  };
+
+  const handleOpenModal = (type: 'faq' | 'text' | 'pdf' | 'url') => {
+    const sourceTypeMap: Record<string, SourceType> = {
+      faq: 'FAQ',
+      text: 'TEXT',
+      pdf: 'PDF',
+      url: 'URL',
+    };
+    
+    const dbType = sourceTypeMap[type];
+    if (isSourceAllowed(dbType)) {
+      setActiveModal(type);
+    } else {
+      const requiredPlan = dbType === 'URL' ? 'Pro' : 'Starter';
+      setUpgradeMessage(`El plan actual de tu negocio no tiene permitido cargar fuentes de tipo ${dbType}. Por favor, actualiza tu suscripción al plan ${requiredPlan} para desbloquear esta función.`);
+    }
+  };
 
   // Estados del Formulario
   const [formName, setFormName] = React.useState('');
@@ -272,8 +298,12 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
         
         {/* Método 1: FAQ */}
         <button
-          onClick={() => setActiveModal('faq')}
-          className="p-6 rounded-2xl border border-border bg-card text-left flex flex-col justify-between h-52 hover:border-primary/40 hover:shadow-lg transition-all group duration-200"
+          onClick={() => handleOpenModal('faq')}
+          className={`p-6 rounded-2xl border bg-card text-left flex flex-col justify-between h-52 transition-all group duration-200 cursor-pointer ${
+            isSourceAllowed('FAQ')
+              ? 'border-border hover:border-primary/40 hover:shadow-lg'
+              : 'border-dashed border-border/60 opacity-60'
+          }`}
         >
           <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500 group-hover:bg-primary group-hover:text-white transition-all duration-200">
             <MessageSquare className="h-6 w-6" />
@@ -281,7 +311,7 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
           <div>
             <h3 className="text-base font-bold mb-1.5 text-foreground flex items-center gap-1.5">
               <span>Preguntas Frecuentes</span>
-              <Plus className="h-4 w-4 text-muted-foreground" />
+              {isSourceAllowed('FAQ') && <Plus className="h-4 w-4 text-muted-foreground" />}
             </h3>
             <p className="text-xs text-muted-foreground font-light leading-relaxed">
               Agrega preguntas comunes y sus respuestas oficiales en texto. Ideal para políticas claras.
@@ -291,8 +321,12 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
 
         {/* Método 2: Texto */}
         <button
-          onClick={() => setActiveModal('text')}
-          className="p-6 rounded-2xl border border-border bg-card text-left flex flex-col justify-between h-52 hover:border-primary/40 hover:shadow-lg transition-all group duration-200"
+          onClick={() => handleOpenModal('text')}
+          className={`p-6 rounded-2xl border bg-card text-left flex flex-col justify-between h-52 transition-all group duration-200 cursor-pointer ${
+            isSourceAllowed('TEXT')
+              ? 'border-border hover:border-primary/40 hover:shadow-lg'
+              : 'border-dashed border-border/60 opacity-60'
+          }`}
         >
           <div className="p-3 rounded-xl bg-violet-500/10 text-violet-500 group-hover:bg-primary group-hover:text-white transition-all duration-200">
             <Info className="h-6 w-6" />
@@ -300,7 +334,7 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
           <div>
             <h3 className="text-base font-bold mb-1.5 text-foreground flex items-center gap-1.5">
               <span>Texto Manual</span>
-              <Plus className="h-4 w-4 text-muted-foreground" />
+              {isSourceAllowed('TEXT') && <Plus className="h-4 w-4 text-muted-foreground" />}
             </h3>
             <p className="text-xs text-muted-foreground font-light leading-relaxed">
               Escribe libremente información histórica, valores de marca o guías para entrenar al bot.
@@ -310,16 +344,25 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
 
         {/* Método 3: PDF */}
         <button
-          onClick={() => setActiveModal('pdf')}
-          className="p-6 rounded-2xl border border-border bg-card text-left flex flex-col justify-between h-52 hover:border-primary/40 hover:shadow-lg transition-all group duration-200"
+          onClick={() => handleOpenModal('pdf')}
+          className={`p-6 rounded-2xl border bg-card text-left flex flex-col justify-between h-52 transition-all group duration-200 relative cursor-pointer ${
+            isSourceAllowed('PDF')
+              ? 'border-border hover:border-primary/40 hover:shadow-lg'
+              : 'border-dashed border-border/60 opacity-60'
+          }`}
         >
+          {!isSourceAllowed('PDF') && (
+            <span className="absolute top-4 right-4 bg-primary/10 text-primary text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Requiere Starter
+            </span>
+          )}
           <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-500 group-hover:bg-primary group-hover:text-white transition-all duration-200">
             <FileText className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-base font-bold mb-1.5 text-foreground flex items-center gap-1.5">
               <span>Subir PDF</span>
-              <Plus className="h-4 w-4 text-muted-foreground" />
+              {isSourceAllowed('PDF') && <Plus className="h-4 w-4 text-muted-foreground" />}
             </h3>
             <p className="text-xs text-muted-foreground font-light leading-relaxed">
               Carga manuales, políticas de devoluciones o catálogos completos en formato PDF.
@@ -329,16 +372,25 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
 
         {/* Método 4: URL */}
         <button
-          onClick={() => setActiveModal('url')}
-          className="p-6 rounded-2xl border border-border bg-card text-left flex flex-col justify-between h-52 hover:border-primary/40 hover:shadow-lg transition-all group duration-200"
+          onClick={() => handleOpenModal('url')}
+          className={`p-6 rounded-2xl border bg-card text-left flex flex-col justify-between h-52 transition-all group duration-200 relative cursor-pointer ${
+            isSourceAllowed('URL')
+              ? 'border-border hover:border-primary/40 hover:shadow-lg'
+              : 'border-dashed border-border/60 opacity-60'
+          }`}
         >
+          {!isSourceAllowed('URL') && (
+            <span className="absolute top-4 right-4 bg-primary/10 text-primary text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Requiere Pro
+            </span>
+          )}
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500 group-hover:bg-primary group-hover:text-white transition-all duration-200">
             <Globe className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-base font-bold mb-1.5 text-foreground flex items-center gap-1.5">
               <span>Escanear URL</span>
-              <Plus className="h-4 w-4 text-muted-foreground" />
+              {isSourceAllowed('URL') && <Plus className="h-4 w-4 text-muted-foreground" />}
             </h3>
             <p className="text-xs text-muted-foreground font-light leading-relaxed">
               Ingresa el enlace de tu sitio web o sección de ayuda para extraer información automáticamente.
@@ -846,6 +898,48 @@ export function TrainingClient({ botId, initialDocuments }: TrainingClientProps)
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Advertencia de Plan (Upgrade) */}
+      {upgradeMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-6 mx-4 relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setUpgradeMessage(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-foreground">Función Premium</h3>
+                <p className="text-xs text-muted-foreground font-light leading-relaxed px-2">
+                  {upgradeMessage}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setUpgradeMessage(null)}
+                className="flex-1 h-9 rounded-lg border border-border text-xs font-semibold hover:bg-muted/50 transition-all cursor-pointer text-center flex items-center justify-center"
+              >
+                Cerrar
+              </button>
+              <a
+                href="/settings"
+                className="flex-1 h-9 rounded-lg bg-primary hover:bg-primary/95 text-xs font-semibold text-white shadow-md transition-all text-center flex items-center justify-center"
+              >
+                Ver Planes y Precios
+              </a>
+            </div>
           </div>
         </div>
       )}
