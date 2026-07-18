@@ -64,6 +64,10 @@ export async function processDocumentChunks(documentId: string) {
   // 2. Si no hay clave de OpenAI válida, no podemos vectorizar (se usará fallback de texto en caliente)
   if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
     console.warn('Saltando generación de embeddings por falta de OPENAI_API_KEY.');
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { status: 'COMPLETED' },
+    });
     return;
   }
 
