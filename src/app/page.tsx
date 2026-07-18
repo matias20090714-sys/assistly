@@ -209,7 +209,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-      <script src="/widget.js" data-bot-id="demo" defer></script>
+      <script src="/widget.js?v=3" data-bot-id="demo" defer></script>
     </div>
   );
 }
