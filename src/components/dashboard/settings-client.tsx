@@ -16,6 +16,9 @@ import {
   Lock,
   Globe,
   Upload,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 
 import Script from 'next/script';
@@ -32,6 +35,7 @@ interface SettingsClientProps {
     category: string | null;
     plan: string;
     hasUsedTrial: boolean;
+    botId: string;
   };
 }
 
@@ -40,6 +44,20 @@ export function SettingsClient({ user, workspace }: SettingsClientProps) {
   const [activeTab, setActiveTab] = React.useState<'general' | 'profile' | 'security' | 'preferences' | 'account'>('general');
   const [paypalLoaded, setPaypalLoaded] = React.useState(false);
   const [currentPlan, setCurrentPlan] = React.useState(workspace.plan);
+
+  const [copiedScript, setCopiedScript] = React.useState(false);
+  const [copiedLink, setCopiedLink] = React.useState(false);
+
+  const copyToClipboard = (text: string, type: 'script' | 'link') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'script') {
+      setCopiedScript(true);
+      setTimeout(() => setCopiedScript(false), 2000);
+    } else {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
 
   React.useEffect(() => {
     // Escuchar si el SDK de PayPal se carga en window
@@ -320,6 +338,78 @@ export function SettingsClient({ user, workspace }: SettingsClientProps) {
                 <span>Guardar Cambios</span>
               </button>
             </form>
+
+            {/* Integración y Canales */}
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-lg font-bold">Integración del Asistente</h3>
+                <p className="text-xs text-muted-foreground font-light">
+                  Conecta tu empleado de IA con tus clientes en tu sitio web, WhatsApp, Instagram o Facebook.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-border">
+                {/* Canal 1: Sitio Web */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">1. Integración en tu Sitio Web</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground font-light leading-relaxed">
+                    Copia este código de inyección y pégalo en el HTML de tu sitio web (justo antes del cierre de la etiqueta <code>&lt;/body&gt;</code>). Funciona en WordPress, Shopify, Webflow, HTML puro y más:
+                  </p>
+                  
+                  <div className="relative rounded-lg bg-slate-950 p-3 border border-white/10 flex items-center justify-between gap-3">
+                    <code className="text-[11px] text-slate-300 font-mono select-all overflow-x-auto whitespace-pre pr-4">
+                      {`<script src="https://assistly-yirc.vercel.app/widget.js" data-bot-id="${workspace.botId}" defer></script>`}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(`<script src="https://assistly-yirc.vercel.app/widget.js" data-bot-id="${workspace.botId}" defer></script>`, 'script')}
+                      className="px-2.5 py-1.5 rounded bg-white/5 hover:bg-white/10 text-white text-xs font-medium transition-all inline-flex items-center gap-1 shrink-0 cursor-pointer"
+                    >
+                      {copiedScript ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                      <span>{copiedScript ? 'Copiado' : 'Copiar'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Canal 2: Redes Sociales */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">2. Enlace Directo para Redes Sociales</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground font-light leading-relaxed">
+                    Si no tienes una web o deseas usar Assistly en <strong>Instagram, WhatsApp, Facebook o TikTok</strong>, puedes compartir este enlace directo. Tus clientes hablarán con tu bot en pantalla completa:
+                  </p>
+                  
+                  <div className="relative rounded-lg bg-slate-950 p-3 border border-white/10 flex items-center justify-between gap-3">
+                    <code className="text-[11px] text-slate-300 font-mono select-all overflow-x-auto whitespace-pre pr-4">
+                      {`https://assistly-yirc.vercel.app/widget?botId=${workspace.botId}`}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(`https://assistly-yirc.vercel.app/widget?botId=${workspace.botId}`, 'link')}
+                      className="px-2.5 py-1.5 rounded bg-white/5 hover:bg-white/10 text-white text-xs font-medium transition-all inline-flex items-center gap-1 shrink-0 cursor-pointer"
+                    >
+                      {copiedLink ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                      <span>{copiedLink ? 'Copiado' : 'Copiar'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex gap-4 pt-2">
+                    <a
+                      href={`https://assistly-yirc.vercel.app/widget?botId=${workspace.botId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
+                    >
+                      <span>Probar enlace directo</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

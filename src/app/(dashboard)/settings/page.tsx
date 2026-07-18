@@ -11,7 +11,7 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Obtener espacio de trabajo, bot y usuario local
+  // Obtener espacio de trabajo con bots, y usuario local
   const membership = await prisma.workspaceMember.findFirst({
     where: {
       user: {
@@ -20,7 +20,11 @@ export default async function SettingsPage() {
     },
     include: {
       user: true,
-      workspace: true,
+      workspace: {
+        include: {
+          bots: true,
+        },
+      },
     },
   });
 
@@ -42,6 +46,7 @@ export default async function SettingsPage() {
     category: membership.workspace.category,
     plan: membership.workspace.plan,
     hasUsedTrial: !!trialSub,
+    botId: membership.workspace.bots[0]?.id || '',
   };
 
   const user = {
