@@ -144,28 +144,28 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Plan Gratis */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Plan Starter */}
             <div className="flex flex-col p-8 rounded-3xl border border-border bg-card text-card-foreground relative overflow-hidden">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold">Plan Free</h3>
-                <p className="text-muted-foreground text-sm mt-1">Prueba Assistly sin costo</p>
+                <h3 className="text-2xl font-bold">Starter</h3>
+                <p className="text-muted-foreground text-sm mt-1">Ideal para pequeños negocios</p>
                 <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl font-extrabold">$0</span>
+                  <span className="text-4xl font-extrabold">$9.99</span>
                   <span className="text-muted-foreground ml-1 text-sm">/ mes</span>
                 </div>
               </div>
               <ul className="space-y-3 mb-8 text-sm text-muted-foreground flex-grow">
                 <li className="flex items-center gap-2">✓ 1 Bot Activo</li>
-                <li className="flex items-center gap-2">✓ 50 Chats al mes</li>
-                <li className="flex items-center gap-2">✓ Carga de Texto y FAQs</li>
-                <li className="flex items-center gap-2">✗ Carga de PDFs y URLs</li>
+                <li className="flex items-center gap-2">✓ 200 Chats al mes</li>
+                <li className="flex items-center gap-2">✓ Carga de FAQs y PDFs</li>
+                <li className="flex items-center gap-2">✗ Carga de URLs (Crawler)</li>
               </ul>
               <Link
                 href="/dashboard"
                 className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-6 font-medium text-foreground transition-all hover:bg-accent active:scale-98"
               >
-                Comenzar Gratis
+                Comenzar con Starter
               </Link>
             </div>
 
@@ -178,21 +178,45 @@ export default function LandingPage() {
                 <h3 className="text-2xl font-bold">Plan Pro</h3>
                 <p className="text-muted-foreground text-sm mt-1">Para negocios en crecimiento</p>
                 <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl font-extrabold">$19</span>
+                  <span className="text-4xl font-extrabold">$19.99</span>
                   <span className="text-muted-foreground ml-1 text-sm">/ mes</span>
                 </div>
               </div>
               <ul className="space-y-3 mb-8 text-sm text-muted-foreground flex-grow">
                 <li className="flex items-center gap-2 text-foreground font-medium">✓ 3 Bots Activos</li>
-                <li className="flex items-center gap-2 text-foreground font-medium">✓ Chats Ilimitados (Fair Use)</li>
-                <li className="flex items-center gap-2 text-foreground font-medium">✓ Carga de PDFs y URL Crawler</li>
-                <li className="flex items-center gap-2 text-foreground font-medium">✓ Soporte prioritario</li>
+                <li className="flex items-center gap-2 text-foreground font-medium">✓ 1000 Chats al mes</li>
+                <li className="flex items-center gap-2 text-foreground font-medium">✓ PDFs y URL Crawler</li>
+                <li className="flex items-center gap-2 text-foreground font-medium">✓ Personalización Visual</li>
               </ul>
               <Link
                 href="/dashboard"
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-6 font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/95 active:scale-98"
               >
                 Obtener Plan Pro
+              </Link>
+            </div>
+
+            {/* Plan Business */}
+            <div className="flex flex-col p-8 rounded-3xl border border-border bg-card text-card-foreground relative overflow-hidden">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold">Business</h3>
+                <p className="text-muted-foreground text-sm mt-1">Para grandes volúmenes y corporativos</p>
+                <div className="mt-4 flex items-baseline">
+                  <span className="text-4xl font-extrabold">$49.99</span>
+                  <span className="text-muted-foreground ml-1 text-sm">/ mes</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-8 text-sm text-muted-foreground flex-grow">
+                <li className="flex items-center gap-2">✓ 10 Bots Activos</li>
+                <li className="flex items-center gap-2">✓ 10000 Chats al mes</li>
+                <li className="flex items-center gap-2">✓ Todas las fuentes</li>
+                <li className="flex items-center gap-2">✓ Soporte prioritario</li>
+              </ul>
+              <Link
+                href="/dashboard"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-6 font-medium text-foreground transition-all hover:bg-accent active:scale-98"
+              >
+                Comenzar con Business
               </Link>
             </div>
           </div>

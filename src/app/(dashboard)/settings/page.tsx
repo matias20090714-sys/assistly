@@ -29,6 +29,7 @@ export default async function SettingsPage() {
   }
 
   const workspace = {
+    id: membership.workspace.id,
     name: membership.workspace.name,
     slug: membership.workspace.slug,
     category: membership.workspace.category,

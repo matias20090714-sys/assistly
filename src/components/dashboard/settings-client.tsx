@@ -18,12 +18,15 @@ import {
   Upload,
 } from 'lucide-react';
 
+import Script from 'next/script';
+
 interface SettingsClientProps {
   user: {
     name: string | null;
     email: string;
   };
   workspace: {
+    id: string;
     name: string;
     slug: string;
     category: string | null;
@@ -34,6 +37,85 @@ interface SettingsClientProps {
 export function SettingsClient({ user, workspace }: SettingsClientProps) {
   const { theme, setTheme } = useNextThemes();
   const [activeTab, setActiveTab] = React.useState<'general' | 'profile' | 'security' | 'preferences' | 'account'>('general');
+  const [paypalLoaded, setPaypalLoaded] = React.useState(false);
+  const [currentPlan, setCurrentPlan] = React.useState(workspace.plan);
+
+  React.useEffect(() => {
+    // Escuchar si el SDK de PayPal se carga en window
+    if ((window as any).paypal) {
+      setPaypalLoaded(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if ((window as any).paypal) {
+        setPaypalLoaded(true);
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  React.useEffect(() => {
+    if (!paypalLoaded || activeTab !== 'account') return;
+
+    const plans = [
+      { key: 'STARTER', id: 'P-5YT747867K2659343NJNPIQY' },
+      { key: 'PRO', id: 'P-00K90185YF944794SNJNPJ2I' },
+      { key: 'BUSINESS', id: 'P-19U157436X5071221NJNPKII' },
+    ];
+
+    plans.forEach((p) => {
+      const containerId = `paypal-button-${p.key.toLowerCase()}`;
+      const container = document.getElementById(containerId);
+      if (container) {
+        // Limpiar para evitar duplicaciones de botones al cambiar de pestaña
+        container.innerHTML = '';
+        
+        (window as any).paypal.Buttons({
+          style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe',
+          },
+          createSubscription: function(data: any, actions: any) {
+            return actions.subscription.create({
+              plan_id: p.id,
+              custom_id: workspace.id,
+            });
+          },
+          onApprove: async function(data: any, actions: any) {
+            try {
+              const res = await fetch('/api/subscriptions/paypal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  subscriptionId: data.subscriptionID,
+                  workspaceId: workspace.id,
+                }),
+              });
+              const resData = await res.json();
+              if (resData.success) {
+                alert(`¡Felicidades! Tu plan ha sido actualizado a ${p.key}.`);
+                setCurrentPlan(p.key);
+                window.location.reload();
+              } else {
+                alert(`Error al registrar la suscripción: ${resData.error}`);
+              }
+            } catch (err) {
+              console.error(err);
+              alert('Error conectando con el servidor al registrar el pago de PayPal.');
+            }
+          },
+          onError: function(err: any) {
+            console.error('PayPal Button Error:', err);
+          }
+        }).render(`#${containerId}`);
+      }
+    });
+  }, [paypalLoaded, activeTab]);
 
   // Estados Perfil
   const [profileName, setProfileName] = React.useState(user.name || '');
@@ -463,6 +545,124 @@ export function SettingsClient({ user, workspace }: SettingsClientProps) {
               <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 self-start sm:self-auto uppercase tracking-wide">
                 Activo
               </span>
+            </div>
+
+            {/* Carga del SDK de PayPal para Subscripciones */}
+            <Script
+              src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'sb'}&vault=true&intent=subscription`}
+              strategy="lazyOnload"
+            />
+
+            {/* Planes de Suscripción de PayPal */}
+            <div className="pt-6 border-t border-border space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold">Planes y Suscripción</h3>
+                <p className="text-xs text-muted-foreground font-light">Elige el plan que mejor se adapte a tu volumen y necesidades de negocio.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Plan Starter */}
+                <div className={`p-5 rounded-2xl border bg-card text-card-foreground flex flex-col justify-between relative overflow-hidden ${currentPlan === 'STARTER' ? 'border-primary shadow-sm bg-primary/5' : 'border-border'}`}>
+                  {currentPlan === 'STARTER' && (
+                    <div className="absolute top-0 right-0 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase">
+                      Activo
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-bold text-base">Starter</h4>
+                      <p className="text-[11px] text-muted-foreground">Plan inicial para pequeños negocios</p>
+                    </div>
+                    <div className="flex items-baseline">
+                      <span className="text-2xl font-extrabold">$9.99</span>
+                      <span className="text-xs text-muted-foreground ml-1">/ mes</span>
+                    </div>
+                    <ul className="text-xs text-muted-foreground space-y-2 border-t border-border/50 pt-3">
+                      <li>✓ 1 Bot Activo</li>
+                      <li>✓ 200 Chats mensuales</li>
+                      <li>✓ Soporte para PDFs</li>
+                      <li>✓ Funciones Básicas</li>
+                    </ul>
+                  </div>
+                  {currentPlan === 'STARTER' ? (
+                    <div className="mt-5 text-center text-xs font-semibold text-primary py-2 bg-primary/10 rounded-lg">
+                      Tu plan actual
+                    </div>
+                  ) : (
+                    <div className="mt-5">
+                      <div id="paypal-button-starter" className="relative z-10" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Plan Pro */}
+                <div className={`p-5 rounded-2xl border-2 bg-card text-card-foreground flex flex-col justify-between relative overflow-hidden shadow-md ${currentPlan === 'PRO' ? 'border-primary bg-primary/5 shadow-primary/5' : 'border-primary/50'}`}>
+                  <div className="absolute top-0 right-0 bg-primary text-white text-[9px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                    {currentPlan === 'PRO' ? 'Activo' : 'Más Popular'}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-bold text-base">Pro</h4>
+                      <p className="text-[11px] text-muted-foreground">Plan recomendado para crecimiento</p>
+                    </div>
+                    <div className="flex items-baseline">
+                      <span className="text-2xl font-extrabold">$19.99</span>
+                      <span className="text-xs text-muted-foreground ml-1">/ mes</span>
+                    </div>
+                    <ul className="text-xs text-muted-foreground space-y-2 border-t border-border/50 pt-3">
+                      <li className="text-foreground">✓ 3 Bots Activos</li>
+                      <li className="text-foreground">✓ 1000 Chats mensuales</li>
+                      <li className="text-foreground">✓ PDFs y URL Crawler</li>
+                      <li className="text-foreground">✓ Personalización Visual</li>
+                      <li className="text-foreground">✓ Funciones Avanzadas</li>
+                    </ul>
+                  </div>
+                  {currentPlan === 'PRO' ? (
+                    <div className="mt-5 text-center text-xs font-semibold text-primary py-2 bg-primary/10 rounded-lg">
+                      Tu plan actual
+                    </div>
+                  ) : (
+                    <div className="mt-5">
+                      <div id="paypal-button-pro" className="relative z-10" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Plan Business */}
+                <div className={`p-5 rounded-2xl border bg-card text-card-foreground flex flex-col justify-between relative overflow-hidden ${currentPlan === 'BUSINESS' ? 'border-primary shadow-sm bg-primary/5' : 'border-border'}`}>
+                  {currentPlan === 'BUSINESS' && (
+                    <div className="absolute top-0 right-0 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase">
+                      Activo
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-bold text-base">Business</h4>
+                      <p className="text-[11px] text-muted-foreground">Para corporaciones y gran volumen</p>
+                    </div>
+                    <div className="flex items-baseline">
+                      <span className="text-2xl font-extrabold">$49.99</span>
+                      <span className="text-xs text-muted-foreground ml-1">/ mes</span>
+                    </div>
+                    <ul className="text-xs text-muted-foreground space-y-2 border-t border-border/50 pt-3">
+                      <li>✓ 10 Bots Activos</li>
+                      <li>✓ 10000 Chats mensuales</li>
+                      <li>✓ Todas las fuentes</li>
+                      <li>✓ Soporte prioritario</li>
+                      <li>✓ Funciones Completas</li>
+                    </ul>
+                  </div>
+                  {currentPlan === 'BUSINESS' ? (
+                    <div className="mt-5 text-center text-xs font-semibold text-primary py-2 bg-primary/10 rounded-lg">
+                      Tu plan actual
+                    </div>
+                  ) : (
+                    <div className="mt-5">
+                      <div id="paypal-button-business" className="relative z-10" />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Exportar datos */}
