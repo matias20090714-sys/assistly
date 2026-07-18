@@ -1,4 +1,8 @@
+'use client';
+
+import * as React from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { Bot, Shield, Zap, Database, ArrowRight, MessageSquare, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -66,12 +70,15 @@ export default function LandingPage() {
               Crear Bot Gratis
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <a
-              href="#demo"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-background px-6 font-medium text-foreground transition-all hover:bg-accent hover:text-accent-foreground active:scale-98 w-full sm:w-auto"
+            <button
+              onClick={() => {
+                const btn = document.querySelector('.assistly-widget-btn') as HTMLButtonElement;
+                if (btn) btn.click();
+              }}
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-background px-6 font-medium text-foreground transition-all hover:bg-accent hover:text-accent-foreground active:scale-98 w-full sm:w-auto cursor-pointer"
             >
               Ver Demostración
-            </a>
+            </button>
           </div>
         </div>
       </section>
@@ -202,6 +209,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <script src="/widget.js" data-bot-id="demo" defer></script>
     </div>
   );
 }
