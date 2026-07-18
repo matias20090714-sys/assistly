@@ -14,6 +14,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (botId !== 'demo' && !uuidRegex.test(botId)) {
+      return NextResponse.json(
+        { error: 'El parámetro botId provisto tiene un formato de UUID inválido.' },
+        { status: 400 }
+      );
+    }
+
+    if (conversationId && !uuidRegex.test(conversationId)) {
+      return NextResponse.json(
+        { error: 'El parámetro conversationId provisto tiene un formato de UUID inválido.' },
+        { status: 400 }
+      );
+    }
+
     if (!message || !message.trim()) {
       return NextResponse.json(
         { error: 'El mensaje no puede estar vacío.' },

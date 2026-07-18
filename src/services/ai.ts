@@ -186,7 +186,13 @@ export async function generateBotResponse(
   messageContent: string,
   historyOverride?: { sender: 'USER' | 'BOT'; content: string }[]
 ) {
-  const fallbackMessage = 'No tengo esa información. ¿Deseas que un asesor del negocio te ayude?';
+  const fallbacks = [
+    'Lo siento, no dispongo de esa información específica en este momento. ¿Te gustaría que un asesor humano se ponga en contacto contigo?',
+    'Lamentablemente no tengo registrado ese detalle. Si lo deseas, puedo avisar a un asesor del negocio para que te ayude directamente.',
+    'Esa información no se encuentra en mi base de conocimientos. ¿Quieres que le pase tu consulta a un representante humano de nuestro equipo?',
+    'No tengo esa información disponible por ahora. ¿Deseas que un asesor del negocio te contacte para resolver tu duda?'
+  ];
+  const fallbackMessage = fallbacks[Math.floor(Math.random() * fallbacks.length)];
 
   // --- CASO DE DEMOSTRACIÓN (DEMO) ---
   if (botId === 'demo') {
@@ -194,12 +200,15 @@ export async function generateBotResponse(
 Eres un empleado virtual inteligente llamado "Assistly Bot" para el negocio de demostración "Assistly".
 Respondes a las consultas de los clientes de forma profesional, concisa, amable y servicial.
 
-REGLAS DE ORO:
-1. Responde a la pregunta del cliente basándote ÚNICAMENTE en la información proporcionada en la sección CONTEXTO de abajo.
-2. Si el CONTEXTO no contiene información suficiente para responder a la consulta del cliente de forma certera, debes responder EXACTAMENTE con esta frase y nada más:
-"${fallbackMessage}"
-3. Nunca inventes información. Si la respuesta no está explícitamente en el CONTEXTO, no intentes adivinar ni dar respuestas generales. Aplica la regla 2.
-4. Mantén tus respuestas breves y directas.
+INSTRUCCIONES DE ATENCIÓN Y COMPORTAMIENTO:
+- Responde siempre de forma amable, clara y conversacional.
+- Varía la redacción de tus respuestas para evitar sonar monótono o robótico.
+- Si el usuario te saluda o agradece de forma general, sé servicial y de tono cálido, respondiendo educadamente sin forzar el uso estricto de la base de conocimientos.
+
+REGLAS DE SEGURIDAD CONTRA ALUCINACIONES:
+1. Responde a la pregunta del cliente basándote EXCLUSIVAMENTE en la información proporcionada en la sección CONTEXTO de abajo.
+2. Si el CONTEXTO no contiene información suficiente para responder a la consulta del cliente de forma certera, debes admitir amablemente que no posees esa información y ofrecer que un asesor se ponga en contacto con él. Nunca inventes respuestas.
+3. Bajo ninguna circunstancia uses información externa para contestar preguntas sobre el negocio.
 
 CONTEXTO:
 ${ASSISTLY_DEMO_KNOWLEDGE}
@@ -306,12 +315,19 @@ ${ASSISTLY_DEMO_KNOWLEDGE}
     return null;
   }
 
-  // 3. Recuperar historial de mensajes (últimos 8 mensajes para contexto)
-  const history = historyOverride || await prisma.message.findMany({
-    where: { conversationId },
-    orderBy: { createdAt: 'asc' },
-    take: 8,
-  });
+  // 3. Recuperar historial de mensajes (últimos 8 mensajes en orden cronológico correcto)
+  let history = historyOverride;
+  if (!history) {
+    const dbMessages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    });
+    history = dbMessages.reverse().map((m) => ({
+      sender: m.sender === 'USER' ? ('USER' as const) : ('BOT' as const),
+      content: m.content,
+    }));
+  }
 
   // 4. Buscar contexto relevante (RAG)
   let context = '';
@@ -324,44 +340,114 @@ ${ASSISTLY_DEMO_KNOWLEDGE}
     console.error('Error buscando chunks vectoriales:', err);
   }
 
-  // Fallback: si no hay fragmentos vectoriales, cargamos el texto crudo de todos los documentos completados
+  // Fallback: si no hay fragmentos vectoriales, cargamos el texto crudo con límite de caracteres para evitar saturación de tokens
   if (!context) {
     const documents = await prisma.document.findMany({
       where: { botId, status: 'COMPLETED' },
     });
-    context = documents
+    const fullText = documents
       .map((d) => `Información de ${d.name}:\n${d.content || ''}`)
       .join('\n\n');
+    context = fullText.slice(0, 8000);
   }
 
   // 5. Preparar el Prompt del Sistema con las reglas estrictas de Assistly
+  const baseInstruction = bot.systemPrompt || `Eres un empleado virtual inteligente llamado "${bot.name}" para el negocio "${bot.workspace.name}".`;
   const systemPrompt = `
-Eres un empleado virtual inteligente llamado "${bot.name}" para el negocio "${bot.workspace.name}".
-Respondes a las consultas de los clientes de forma profesional, concisa, amable y servicial.
+${baseInstruction}
 
-REGLAS DE ORO:
-1. Responde a la pregunta del cliente basándote ÚNICAMENTE en la información proporcionada en la sección CONTEXTO de abajo.
-2. Si el CONTEXTO no contiene información suficiente para responder a la consulta del cliente de forma certera, debes responder EXACTAMENTE con esta frase y nada más:
-"${fallbackMessage}"
-3. Nunca inventes información. Si la respuesta no está explícitamente en el CONTEXTO, no intentes adivinar ni dar respuestas generales. Aplica la regla 2.
-4. Mantén tus respuestas breves y directas.
+INSTRUCCIONES DE ATENCIÓN Y COMPORTAMIENTO:
+- Responde siempre de forma amable, clara, profesional y conversacional.
+- Varía la redacción de tus respuestas para evitar sonar monótono o robótico.
+- Si el usuario te saluda o agradece de forma general, sé servicial y educado sin forzar el uso estricto de la base de conocimientos.
 
-CONTEXTO:
+REGLAS DE SEGURIDAD CONTRA ALUCINACIONES:
+1. Responde a las consultas del cliente basándote EXCLUSIVAMENTE en la información proporcionada en la sección CONTEXTO de abajo.
+2. Si el CONTEXTO no contiene información suficiente para responder a la consulta del cliente de forma certera, debes responder de manera natural indicando que no dispones de esa información y ofrecer que un asesor se ponga en contacto con él. Nunca inventes respuestas ni asumas detalles.
+3. Bajo ninguna circunstancia uses información que no provenga del CONTEXTO para contestar preguntas sobre el negocio.
+
+CONTEXTO DE CONOCIMIENTO:
 ${context}
   `.trim();
 
-  // 6. Si no hay OPENAI_API_KEY, devolvemos una respuesta simulada basada en RAG básico (para desarrollo local)
+  // 6. Si no hay OPENAI_API_KEY, devolvemos una respuesta simulada basada en un RAG sintáctico local de consulta al contexto (para desarrollo local)
   let botReply = '';
   if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
-    console.warn('Saltando llamada a OpenAI por falta de API Key válida. Usando respuesta simulada local.');
-    // Buscar si el mensaje coincide vagamente con algo en el contexto
-    const lowerQuery = messageContent.toLowerCase();
-    if (lowerQuery.includes('horario') || lowerQuery.includes('hora') || lowerQuery.includes('abren')) {
-      botReply = `Nuestros horarios de atención son de Lunes a Sábado de 9:00 AM a 8:00 PM. ¡Te esperamos!`;
-    } else if (lowerQuery.includes('servicio') || lowerQuery.includes('producto') || lowerQuery.includes('ofreces')) {
-      botReply = `Ofrecemos tortas de bodas personalizadas, postres gourmet, catering y talleres de repostería.`;
+    console.warn('Saltando llamada a OpenAI por falta de API Key válida. Usando analizador de contexto local.');
+    
+    // Función auxiliar para normalizar texto removiendo acentos y diacríticos
+    const normalizeText = (text: string) => {
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    };
+    
+    const cleanQuery = normalizeText(messageContent);
+    
+    // Saludos y despedidas rápidas con extracción dinámica de rol desde el prompt
+    if (cleanQuery === 'hola' || cleanQuery.startsWith('hola ')) {
+      let role = 'asistente virtual';
+      const promptLower = baseInstruction.toLowerCase();
+      if (promptLower.includes('mozo')) role = 'mozo virtual';
+      else if (promptLower.includes('estilista')) role = 'estilista virtual';
+      else if (promptLower.includes('recepcionista')) role = 'recepcionista médico virtual';
+      else if (promptLower.includes('personal shopper')) role = 'personal shopper virtual';
+      else if (promptLower.includes('entrenador')) role = 'entrenador virtual';
+      else if (promptLower.includes('consultor')) role = 'consultor virtual';
+      
+      botReply = `¡Hola! Soy ${bot.name}, tu ${role}. ¿En qué puedo colaborar contigo hoy?`;
+    } else if (cleanQuery === 'gracias' || cleanQuery === 'muchas gracias' || cleanQuery === 'adios' || cleanQuery === 'chau') {
+      botReply = '¡Con gusto! Quedo a tu disposición si necesitas saber algo más sobre nuestro negocio.';
     } else {
-      botReply = fallbackMessage;
+      // Buscar en las líneas del contexto (excluyendo las de cabecera)
+      const lines = context.split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0 && !normalizeText(l).startsWith('informacion de'));
+      
+      let matchedLine = '';
+      
+      // 1. Horarios
+      if (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia')) {
+        matchedLine = lines.find((l) => {
+          const cleanLine = normalizeText(l);
+          return cleanLine.includes('horari') || cleanLine.includes('hora') || cleanLine.includes('abiert') || cleanLine.includes('cerrad') || cleanLine.includes('atencion');
+        }) || '';
+      }
+      
+      // 2. Servicios
+      if (!matchedLine && (cleanQuery.includes('servici') || cleanQuery.includes('ofrece') || cleanQuery.includes('especialidad') || cleanQuery.includes('hace') || cleanQuery.includes('hacer') || cleanQuery.includes('corte') || cleanQuery.includes('lasana') || cleanQuery.includes('clase') || cleanQuery.includes('grupal'))) {
+        matchedLine = lines.find((l) => {
+          const cleanLine = normalizeText(l);
+          return cleanLine.includes('servici') || cleanLine.includes('especialidad') || cleanLine.includes('ofrecemos') || cleanLine.includes('clase') || cleanLine.includes('corte') || cleanLine.includes('lasana') || cleanLine.includes('tratamiento');
+        }) || '';
+      }
+      
+      // 3. Precios y Envíos
+      if (!matchedLine && (cleanQuery.includes('preci') || cleanQuery.includes('costo') || cleanQuery.includes('cuesta') || cleanQuery.includes('tarifa') || cleanQuery.includes('valor') || cleanQuery.includes('pase') || cleanQuery.includes('mensual') || cleanQuery.includes('gratis') || cleanQuery.includes('free') || cleanQuery.includes('$') || cleanQuery.includes('envi'))) {
+        matchedLine = lines.find((l) => {
+          const cleanLine = normalizeText(l);
+          return cleanLine.includes('$') || cleanLine.includes('preci') || cleanLine.includes('costo') || cleanLine.includes('cuesta') || cleanLine.includes('tarifa') || cleanLine.includes('pase') || cleanLine.includes('gratis') || cleanLine.includes('envi');
+        }) || '';
+      }
+      
+      // 4. Turnos / Reservas / Contacto / Soporte
+      if (!matchedLine && (cleanQuery.includes('turn') || cleanQuery.includes('reserv') || cleanQuery.includes('contact') || cleanQuery.includes('email') || cleanQuery.includes('mail') || cleanQuery.includes('correo') || cleanQuery.includes('telefon') || cleanQuery.includes('whatsapp') || cleanQuery.includes('web') || cleanQuery.includes('soporte'))) {
+        matchedLine = lines.find((l) => {
+          const cleanLine = normalizeText(l);
+          return cleanLine.includes('turn') || cleanLine.includes('reserv') || cleanLine.includes('@') || cleanLine.includes('+') || cleanLine.includes('web') || cleanLine.includes('contact') || cleanLine.includes('llamar') || cleanLine.includes('soporte');
+        }) || '';
+      }
+      
+      // 5. Obras Sociales / Prepaga
+      if (!matchedLine && (cleanQuery.includes('social') || cleanQuery.includes('obra') || cleanQuery.includes('osde') || cleanQuery.includes('swiss') || cleanQuery.includes('galeno') || cleanQuery.includes('medicus') || cleanQuery.includes('prepaga') || cleanQuery.includes('cobertur'))) {
+        matchedLine = lines.find((l) => {
+          const cleanLine = normalizeText(l);
+          return cleanLine.includes('social') || cleanLine.includes('obra') || cleanLine.includes('osde') || cleanLine.includes('swiss') || cleanLine.includes('galeno') || cleanLine.includes('medicus') || cleanLine.includes('prepaga') || cleanLine.includes('atendemos');
+        }) || '';
+      }
+      
+      botReply = matchedLine || fallbackMessage;
     }
   } else {
     // Llamar a OpenAI Chat Completion
