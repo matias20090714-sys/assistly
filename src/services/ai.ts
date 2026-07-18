@@ -2,6 +2,12 @@ import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
 import { SourceType } from '@prisma/client';
 
+export function isInvalidOpenAIKey(key: string | undefined): boolean {
+  if (!key) return true;
+  const k = key.toLowerCase();
+  return k === 'mock-key' || k.includes('xxxx') || k.includes('placeholder') || k.includes('proj-xxx') || k.length < 20;
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'mock-key',
 });
@@ -32,8 +38,8 @@ export function chunkText(text: string, size: number = 600, overlap: number = 10
 
 // Genera el embedding de un texto usando la API de OpenAI
 export async function embedText(text: string): Promise<number[]> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY no configurada.');
+  if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
+    throw new Error('OPENAI_API_KEY no configurada o es inválida.');
   }
 
   const response = await openai.embeddings.create({
@@ -55,8 +61,8 @@ export async function processDocumentChunks(documentId: string) {
   // 1. Fragmentar texto
   const chunks = chunkText(document.content);
 
-  // 2. Si no hay clave de OpenAI, no podemos vectorizar (se usará fallback de texto en caliente)
-  if (!process.env.OPENAI_API_KEY) {
+  // 2. Si no hay clave de OpenAI válida, no podemos vectorizar (se usará fallback de texto en caliente)
+  if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
     console.warn('Saltando generación de embeddings por falta de OPENAI_API_KEY.');
     return;
   }
@@ -108,7 +114,7 @@ export async function findRelevantChunks(
   query: string,
   limit: number = 3
 ): Promise<{ content: string }[]> {
-  if (!process.env.OPENAI_API_KEY) {
+  if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
     return [];
   }
 
@@ -201,7 +207,7 @@ ${ASSISTLY_DEMO_KNOWLEDGE}
 
     let botReply = '';
 
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'mock-key') {
+    if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
       console.warn('Saltando llamada a OpenAI por falta de API Key válida en el demo. Usando respuestas locales simuladas.');
       const lowerQuery = messageContent.toLowerCase();
       if (lowerQuery.includes('qué es') || lowerQuery.includes('que es') || lowerQuery.includes('assistly')) {
@@ -318,7 +324,7 @@ ${context}
 
   // 6. Si no hay OPENAI_API_KEY, devolvemos una respuesta simulada basada en RAG básico (para desarrollo local)
   let botReply = '';
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'mock-key') {
+  if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
     console.warn('Saltando llamada a OpenAI por falta de API Key válida. Usando respuesta simulada local.');
     // Buscar si el mensaje coincide vagamente con algo en el contexto
     const lowerQuery = messageContent.toLowerCase();
