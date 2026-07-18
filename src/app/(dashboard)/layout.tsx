@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
+import { ClerkProvider } from '@clerk/nextjs';
 import prisma from '@/lib/prisma';
 import { DashboardLayoutClient } from '@/components/dashboard/dashboard-layout-client';
 
@@ -32,8 +33,10 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardLayoutClient workspaceName={membership.workspace.name}>
-      {children}
-    </DashboardLayoutClient>
+    <ClerkProvider>
+      <DashboardLayoutClient workspaceName={membership.workspace.name}>
+        {children}
+      </DashboardLayoutClient>
+    </ClerkProvider>
   );
 }
