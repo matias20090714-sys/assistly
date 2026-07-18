@@ -263,6 +263,54 @@ function runLocalParser(
   return fallbackMessage;
 }
 
+function isInvalidGeminiKey(key: string | undefined): boolean {
+  if (!key) return true;
+  const k = key.toLowerCase();
+  return k === 'mock-key' || k.includes('xxxx') || k.includes('placeholder') || k.length < 15;
+}
+
+// Llama a la API oficial de Google Gemini usando fetch (sin dependencias adicionales)
+async function generateGeminiResponse(
+  systemPrompt: string,
+  history: { sender: 'USER' | 'BOT'; content: string }[],
+  messageContent: string,
+  apiKey: string
+): Promise<string> {
+  const contents = [
+    ...history.map((m) => ({
+      role: m.sender === 'USER' ? 'user' : 'model',
+      parts: [{ text: m.content }],
+    })),
+    { role: 'user', parts: [{ text: messageContent }] },
+  ];
+
+  const body = {
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents: contents,
+    generationConfig: {
+      temperature: 0.2
+    }
+  };
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API Error (${response.status}): ${errText}`);
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
 // Genera la respuesta del Asistente Virtual usando RAG y OpenAI
 export async function generateBotResponse(
   botId: string,
@@ -456,7 +504,7 @@ CONTEXTO DE CONOCIMIENTO:
 ${context}
   `.trim();
 
-  // 6. Si no hay OPENAI_API_KEY o falla la llamada, devolvemos una respuesta simulada basada en un RAG sintáctico local (para desarrollo o cuota agotada)
+  // 6. Si no hay OPENAI_API_KEY o falla la llamada, devolvemos una respuesta simulada basada en un RAG sintáctico local o Gemini (para desarrollo o cuota agotada)
   let botReply = '';
   const normalizeText = (text: string) => {
     return text
@@ -469,9 +517,19 @@ ${context}
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !normalizeText(l).startsWith('informacion de'));
 
-  if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
-    console.warn('Saltando llamada a OpenAI por falta de API Key válida. Usando analizador de contexto local.');
-    
+  const tryGemini = async (): Promise<string | null> => {
+    if (!isInvalidGeminiKey(process.env.GEMINI_API_KEY)) {
+      try {
+        console.log('Intentando responder usando Google Gemini API...');
+        return await generateGeminiResponse(systemPrompt, history, messageContent, process.env.GEMINI_API_KEY!);
+      } catch (geminiErr) {
+        console.warn('Error llamando a Google Gemini API:', geminiErr);
+      }
+    }
+    return null;
+  };
+
+  const getLocalFallback = (): string => {
     if (cleanQuery === 'hola' || cleanQuery.startsWith('hola ')) {
       let role = 'asistente virtual';
       const promptLower = baseInstruction.toLowerCase();
@@ -482,11 +540,22 @@ ${context}
       else if (promptLower.includes('entrenador')) role = 'entrenador virtual';
       else if (promptLower.includes('consultor')) role = 'consultor virtual';
       
-      botReply = `¡Hola! Soy ${bot.name}, tu ${role}. ¿En qué puedo colaborar contigo hoy?`;
+      return `¡Hola! Soy ${bot.name}, tu ${role}. ¿En qué puedo colaborar contigo hoy?`;
     } else if (cleanQuery === 'gracias' || cleanQuery === 'muchas gracias' || cleanQuery === 'adios' || cleanQuery === 'chau') {
-      botReply = '¡Con gusto! Quedo a tu disposición si necesitas saber algo más sobre nuestro negocio.';
+      return '¡Con gusto! Quedo a tu disposición si necesitas saber algo más sobre nuestro negocio.';
     } else {
-      botReply = runLocalParser(cleanQuery, lines, bot.name, fallbackMessage);
+      return runLocalParser(cleanQuery, lines, bot.name, fallbackMessage);
+    }
+  };
+
+  if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
+    console.warn('Saltando llamada a OpenAI por falta de API Key válida.');
+    const geminiReply = await tryGemini();
+    if (geminiReply) {
+      botReply = geminiReply;
+    } else {
+      console.warn('Usando analizador de contexto local como último recurso.');
+      botReply = getLocalFallback();
     }
   } else {
     try {
@@ -508,22 +577,13 @@ ${context}
 
       botReply = response.choices[0]?.message?.content || fallbackMessage;
     } catch (err) {
-      console.warn('Error llamando a OpenAI (ej. quota insuficiente, error de red). Usando fallback local.', err);
-      if (cleanQuery === 'hola' || cleanQuery.startsWith('hola ')) {
-        let role = 'asistente virtual';
-        const promptLower = baseInstruction.toLowerCase();
-        if (promptLower.includes('mozo')) role = 'mozo virtual';
-        else if (promptLower.includes('estilista')) role = 'estilista virtual';
-        else if (promptLower.includes('recepcionista')) role = 'recepcionista médico virtual';
-        else if (promptLower.includes('personal shopper')) role = 'personal shopper virtual';
-        else if (promptLower.includes('entrenador')) role = 'entrenador virtual';
-        else if (promptLower.includes('consultor')) role = 'consultor virtual';
-        
-        botReply = `¡Hola! Soy ${bot.name}, tu ${role}. ¿En qué puedo colaborar contigo hoy?`;
-      } else if (cleanQuery === 'gracias' || cleanQuery === 'muchas gracias' || cleanQuery === 'adios' || cleanQuery === 'chau') {
-        botReply = '¡Con gusto! Quedo a tu disposición si necesitas saber algo más sobre nuestro negocio.';
+      console.warn('Error llamando a OpenAI (ej. quota insuficiente, error de red).', err);
+      const geminiReply = await tryGemini();
+      if (geminiReply) {
+        botReply = geminiReply;
       } else {
-        botReply = runLocalParser(cleanQuery, lines, bot.name, fallbackMessage);
+        console.warn('Usando fallback local como último recurso.');
+        botReply = getLocalFallback();
       }
     }
   }
