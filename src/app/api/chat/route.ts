@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateBotResponse } from '@/services/ai';
+import { PLAN_LIMITS } from '@/services/subscription';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,22 +50,60 @@ export async function POST(req: NextRequest) {
     }
 
     // --- CASO DE BOT REAL ---
+    // 1. Validar el bot y su plan
+    const bot = await prisma.bot.findUnique({
+      where: { id: botId },
+      include: {
+        workspace: true,
+      },
+    });
+
+    if (!bot) {
+      return NextResponse.json(
+        { error: 'El bot especificado no existe.' },
+        { status: 404 }
+      );
+    }
+
+    const plan = bot.workspace.plan;
+
+    // Si el plan expiró, retornar mensaje de error del bot bloqueado
+    if (plan === 'EXPIRED') {
+      return NextResponse.json({
+        success: true,
+        conversationId: conversationId || 'expired',
+        response: 'El período de prueba de este asistente virtual ha finalizado. Para reactivarlo, por favor actualiza la suscripción en el panel de control de Assistly.',
+        status: 'BOT',
+      });
+    }
+
+    // Contar chats mensuales de este workspace en el mes actual para verificar límites
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const chatsCount = await prisma.conversation.count({
+      where: {
+        bot: { workspaceId: bot.workspaceId },
+        createdAt: { gte: startOfMonth },
+      },
+    });
+
+    const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.TRIAL;
+
+    if (chatsCount >= limits.maxMonthlyChats) {
+      return NextResponse.json({
+        success: true,
+        conversationId: conversationId || 'limit-reached',
+        response: 'Lo sentimos, este asistente ha alcanzado el límite de conversaciones mensuales de su plan. Por favor, intenta de nuevo el próximo mes o contacta al negocio por otros canales.',
+        status: 'BOT',
+      });
+    }
+
     let activeConversationId = conversationId;
 
-    // 1. Si no hay conversación activa, crear una nueva
+    // 2. Si no hay conversación activa, crear una nueva
     if (!activeConversationId) {
-      // Validar si el bot existe
-      const botExists = await prisma.bot.findUnique({
-        where: { id: botId },
-      });
-
-      if (!botExists) {
-        return NextResponse.json(
-          { error: 'El bot especificado no existe.' },
-          { status: 404 }
-        );
-      }
-
       const randomCustId = `visitante_${Math.floor(1000 + Math.random() * 9000)}`;
 
       const newConv = await prisma.conversation.create({
@@ -79,7 +118,7 @@ export async function POST(req: NextRequest) {
       activeConversationId = newConv.id;
     }
 
-    // 2. Invocar el motor de IA (que guarda los mensajes de USER y BOT en la BD)
+    // 3. Invocar el motor de IA (que guarda los mensajes de USER y BOT en la BD)
     const response = await generateBotResponse(botId, activeConversationId, message, history);
 
     return NextResponse.json({
