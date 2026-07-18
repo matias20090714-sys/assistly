@@ -240,11 +240,11 @@ ${ASSISTLY_DEMO_KNOWLEDGE}
         botReply = 'Para instalar el widget, ve a la sección de "Ajustes" de tu bot, copia el script inyectable generado (ej. <script src=".../widget.js" data-bot-id="..."></script>) y pégalo antes del cierre de la etiqueta </head> o <body> del código de tu página web.';
       }
       // 8. Planes / Precios / Costo
-      else if (lowerQuery.includes('planes') || lowerQuery.includes('precio') || lowerQuery.includes('costo') || lowerQuery.includes('gratis') || lowerQuery.includes('free') || lowerQuery.includes('pro') || lowerQuery.includes('pago') || lowerQuery.includes('suscripcion')) {
+      else if (lowerQuery.includes('planes') || lowerQuery.includes('precio') || lowerQuery.includes('costo') || lowerQuery.includes('cuesta') || lowerQuery.includes('cuestan') || lowerQuery.includes('valor') || lowerQuery.includes('valen') || lowerQuery.includes('tarifa') || lowerQuery.includes('tarifas') || lowerQuery.includes('dolar') || lowerQuery.includes('dólar') || lowerQuery.includes('dolares') || lowerQuery.includes('dólares') || lowerQuery.includes('usd') || lowerQuery.includes('gratis') || lowerQuery.includes('free') || lowerQuery.includes('pro') || lowerQuery.includes('pago') || lowerQuery.includes('suscripcion') || lowerQuery.includes('suscripción')) {
         botReply = 'Ofrecemos dos planes principales:\n- **Plan Free ($0/mes):** 1 bot activo, 50 chats al mes, entrenamiento con FAQs y texto.\n- **Plan Pro ($19/mes):** 3 bots activos, chats ilimitados, crawler de URLs/sitios web y soporte prioritario por correo.';
       }
       // 9. Contacto / Soporte / Ayuda
-      else if (lowerQuery.includes('contacto') || lowerQuery.includes('soporte') || lowerQuery.includes('correo') || lowerQuery.includes('email') || lowerQuery.includes('ayuda') || lowerQuery.includes('email') || lowerQuery.includes('mail')) {
+      else if (lowerQuery.includes('contacto') || lowerQuery.includes('soporte') || lowerQuery.includes('correo') || lowerQuery.includes('email') || lowerQuery.includes('ayuda') || lowerQuery.includes('email') || lowerQuery.includes('mail') || lowerQuery.includes('escribir') || lowerQuery.includes('escribo') || lowerQuery.includes('telefono') || lowerQuery.includes('teléfono')) {
         botReply = 'Puedes ponerte en contacto con el equipo comercial o de soporte de Assistly escribiéndonos directamente a **soporte@assistly.com** o visitando nuestra web oficial en https://assistly.com.';
       }
       // 10. Fallback genérico
