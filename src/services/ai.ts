@@ -411,57 +411,72 @@ ${context}
         .map((l) => l.trim())
         .filter((l) => l.length > 0 && !normalizeText(l).startsWith('informacion de'));
       
-      let matchedLine = '';
+      let matchedIndex = -1;
       
       // 0. Qué es / Definición del negocio o chatbot
       if (cleanQuery.includes('que es') || cleanQuery.includes('de que se trata') || cleanQuery.includes('para que sirve') || cleanQuery.includes('que hace') || cleanQuery.includes('explic') || cleanQuery.includes('definici') || cleanQuery.includes('funciona') || cleanQuery.includes('informacion')) {
-        matchedLine = lines.find((l) => {
+        matchedIndex = lines.findIndex((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes(normalizeText(bot.name)) || cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('sistema') || cleanLine.includes('negocio') || cleanLine.includes('ayuda');
-        }) || lines[0] || '';
+        });
+        
+        if (matchedIndex !== -1 && lines[matchedIndex].includes('Nombre del negocio') && lines.length > matchedIndex + 1) {
+          const betterIndex = lines.slice(matchedIndex + 1).findIndex((l) => {
+            const cleanLine = normalizeText(l);
+            return cleanLine.includes('plataforma') || cleanLine.includes('servicio') || cleanLine.includes('empleado virtual') || cleanLine.includes('saas');
+          });
+          if (betterIndex !== -1) {
+            matchedIndex = matchedIndex + 1 + betterIndex;
+          }
+        }
       }
 
       // 1. Horarios
-      if (!matchedLine && (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia'))) {
-        matchedLine = lines.find((l) => {
+      if (matchedIndex === -1 && (cleanQuery.includes('horari') || cleanQuery.includes('hora') || cleanQuery.includes('abiert') || cleanQuery.includes('abren') || cleanQuery.includes('cierra') || cleanQuery.includes('dia'))) {
+        matchedIndex = lines.findIndex((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes('horari') || cleanLine.includes('hora') || cleanLine.includes('abiert') || cleanLine.includes('cerrad') || cleanLine.includes('atencion');
-        }) || '';
+        });
       }
       
       // 2. Servicios
-      if (!matchedLine && (cleanQuery.includes('servici') || cleanQuery.includes('ofrece') || cleanQuery.includes('especialidad') || cleanQuery.includes('hace') || cleanQuery.includes('hacer') || cleanQuery.includes('corte') || cleanQuery.includes('lasana') || cleanQuery.includes('clase') || cleanQuery.includes('grupal'))) {
-        matchedLine = lines.find((l) => {
+      if (matchedIndex === -1 && (cleanQuery.includes('servici') || cleanQuery.includes('ofrece') || cleanQuery.includes('especialidad') || cleanQuery.includes('hace') || cleanQuery.includes('hacer') || cleanQuery.includes('corte') || cleanQuery.includes('lasana') || cleanQuery.includes('clase') || cleanQuery.includes('grupal'))) {
+        matchedIndex = lines.findIndex((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes('servici') || cleanLine.includes('especialidad') || cleanLine.includes('ofrecemos') || cleanLine.includes('clase') || cleanLine.includes('corte') || cleanLine.includes('lasana') || cleanLine.includes('tratamiento');
-        }) || '';
+        });
       }
       
       // 3. Precios y Envíos
-      if (!matchedLine && (cleanQuery.includes('preci') || cleanQuery.includes('costo') || cleanQuery.includes('cuesta') || cleanQuery.includes('tarifa') || cleanQuery.includes('valor') || cleanQuery.includes('pase') || cleanQuery.includes('mensual') || cleanQuery.includes('gratis') || cleanQuery.includes('free') || cleanQuery.includes('$') || cleanQuery.includes('envi'))) {
-        matchedLine = lines.find((l) => {
+      if (matchedIndex === -1 && (cleanQuery.includes('preci') || cleanQuery.includes('costo') || cleanQuery.includes('cuesta') || cleanQuery.includes('tarifa') || cleanQuery.includes('valor') || cleanQuery.includes('pase') || cleanQuery.includes('mensual') || cleanQuery.includes('gratis') || cleanQuery.includes('free') || cleanQuery.includes('$') || cleanQuery.includes('envi'))) {
+        matchedIndex = lines.findIndex((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes('$') || cleanLine.includes('preci') || cleanLine.includes('costo') || cleanLine.includes('cuesta') || cleanLine.includes('tarifa') || cleanLine.includes('pase') || cleanLine.includes('gratis') || cleanLine.includes('envi');
-        }) || '';
+        });
       }
       
       // 4. Turnos / Reservas / Contacto / Soporte
-      if (!matchedLine && (cleanQuery.includes('turn') || cleanQuery.includes('reserv') || cleanQuery.includes('contact') || cleanQuery.includes('email') || cleanQuery.includes('mail') || cleanQuery.includes('correo') || cleanQuery.includes('telefon') || cleanQuery.includes('whatsapp') || cleanQuery.includes('web') || cleanQuery.includes('soporte'))) {
-        matchedLine = lines.find((l) => {
+      if (matchedIndex === -1 && (cleanQuery.includes('turn') || cleanQuery.includes('reserv') || cleanQuery.includes('contact') || cleanQuery.includes('email') || cleanQuery.includes('mail') || cleanQuery.includes('correo') || cleanQuery.includes('telefon') || cleanQuery.includes('whatsapp') || cleanQuery.includes('web') || cleanQuery.includes('soporte'))) {
+        matchedIndex = lines.findIndex((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes('turn') || cleanLine.includes('reserv') || cleanLine.includes('@') || cleanLine.includes('+') || cleanLine.includes('web') || cleanLine.includes('contact') || cleanLine.includes('llamar') || cleanLine.includes('soporte');
-        }) || '';
+        });
       }
       
       // 5. Obras Sociales / Prepaga
-      if (!matchedLine && (cleanQuery.includes('social') || cleanQuery.includes('obra') || cleanQuery.includes('osde') || cleanQuery.includes('swiss') || cleanQuery.includes('galeno') || cleanQuery.includes('medicus') || cleanQuery.includes('prepaga') || cleanQuery.includes('cobertur'))) {
-        matchedLine = lines.find((l) => {
+      if (matchedIndex === -1 && (cleanQuery.includes('social') || cleanQuery.includes('obra') || cleanQuery.includes('osde') || cleanQuery.includes('swiss') || cleanQuery.includes('galeno') || cleanQuery.includes('medicus') || cleanQuery.includes('prepaga') || cleanQuery.includes('cobertur'))) {
+        matchedIndex = lines.findIndex((l) => {
           const cleanLine = normalizeText(l);
           return cleanLine.includes('social') || cleanLine.includes('obra') || cleanLine.includes('osde') || cleanLine.includes('swiss') || cleanLine.includes('galeno') || cleanLine.includes('medicus') || cleanLine.includes('prepaga') || cleanLine.includes('atendemos');
-        }) || '';
+        });
       }
-      
-      botReply = matchedLine || fallbackMessage;
+
+      if (matchedIndex !== -1) {
+        // Tomar la línea y las siguientes 4 líneas del contexto (o hasta el final del archivo)
+        botReply = lines.slice(matchedIndex, matchedIndex + 5).join('\n');
+      } else {
+        botReply = fallbackMessage;
+      }
     }
   } else {
     // Llamar a OpenAI Chat Completion
