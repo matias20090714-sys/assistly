@@ -209,18 +209,46 @@ ${ASSISTLY_DEMO_KNOWLEDGE}
 
     if (isInvalidOpenAIKey(process.env.OPENAI_API_KEY)) {
       console.warn('Saltando llamada a OpenAI por falta de API Key válida en el demo. Usando respuestas locales simuladas.');
-      const lowerQuery = messageContent.toLowerCase();
-      if (lowerQuery.includes('qué es') || lowerQuery.includes('que es') || lowerQuery.includes('assistly')) {
-        botReply = 'Assistly es una plataforma SaaS moderna que permite crear, entrenar y desplegar empleados virtuales con IA para automatizar el soporte de tu negocio.';
-      } else if (lowerQuery.includes('planes') || lowerQuery.includes('precio') || lowerQuery.includes('costo') || lowerQuery.includes('free') || lowerQuery.includes('pro')) {
-        botReply = 'Ofrecemos el Plan Free ($0/mes) con 1 bot y 50 chats, y planes futuros como Starter, Pro ($19/mes) con chats ilimitados y crawler de URLs, y Business.';
-      } else if (lowerQuery.includes('contacto') || lowerQuery.includes('soporte') || lowerQuery.includes('correo') || lowerQuery.includes('email')) {
-        botReply = 'Puedes contactar con el equipo comercial o de soporte de Assistly escribiendo a: soporte@assistly.com o visitando la web oficial: https://assistly.com.';
-      } else if (lowerQuery.includes('entrenar') || lowerQuery.includes('enseñar') || lowerQuery.includes('aprende')) {
-        botReply = 'Puedes entrenar al bot en la sección "Enseñar a Assistly" usando textos, preguntas frecuentes (FAQs), documentos PDF o ingresando la URL de tu sitio web.';
-      } else if (lowerQuery.includes('instalar') || lowerQuery.includes('widget') || lowerQuery.includes('script') || lowerQuery.includes('html')) {
-        botReply = 'Para instalar el widget, copia el script inyectable en Ajustes y pégalo antes del cierre de </head> o <body> en el HTML de tu sitio.';
-      } else {
+      const lowerQuery = messageContent.toLowerCase().trim();
+      
+      // 1. Saludos
+      if (lowerQuery === 'hola' || lowerQuery === 'buen dia' || lowerQuery === 'buen día' || lowerQuery === 'buenos dias' || lowerQuery === 'buenos días' || lowerQuery === 'buenas tardes' || lowerQuery === 'buenas noches' || lowerQuery.startsWith('hola ')) {
+        botReply = '¡Hola! Bienvenido a la demostración en vivo de Assistly. Soy tu empleado virtual inteligente. ¿En qué puedo ayudarte hoy?';
+      }
+      // 2. Agradecimientos o despedidas
+      else if (lowerQuery === 'gracias' || lowerQuery === 'muchas gracias' || lowerQuery === 'ok' || lowerQuery === 'listo' || lowerQuery === 'perfecto' || lowerQuery === 'adios' || lowerQuery === 'adiós' || lowerQuery === 'chau') {
+        botReply = '¡De nada! Si tienes alguna otra duda sobre cómo automatizar tu soporte con Assistly, pregúntame. ¡Estoy aquí para ayudarte!';
+      }
+      // 3. Utilidad / Para qué sirve / Qué hace (priorizar sobre qué es)
+      else if (lowerQuery.includes('sirve') || lowerQuery.includes('para que') || lowerQuery.includes('para qué') || lowerQuery.includes('hace') || lowerQuery.includes('hacer') || lowerQuery.includes('funcion') || lowerQuery.includes('función') || lowerQuery.includes('beneficio') || lowerQuery.includes('ventaja')) {
+        botReply = 'Assistly sirve para responder consultas de tus clientes 24/7 de forma instantánea y precisa. Te ayuda a automatizar el soporte repetitivo, capturar leads (contactos) y liberar tiempo para tu equipo. Si una consulta es muy compleja, un operador humano puede tomar el control del chat manualmente.';
+      }
+      // 4. Qué es / Definición
+      else if (lowerQuery.includes('que es') || lowerQuery.includes('qué es') || lowerQuery.includes('definicion') || lowerQuery.includes('definición') || lowerQuery.includes('quien es') || lowerQuery.includes('quién es') || lowerQuery === 'assistly') {
+        botReply = 'Assistly es una plataforma SaaS moderna que permite a cualquier negocio crear, entrenar y desplegar empleados virtuales con Inteligencia Artificial para automatizar la atención al cliente y soporte de forma premium.';
+      }
+      // 5. Funcionamiento / Cómo funciona / Pasos
+      else if (lowerQuery.includes('como funciona') || lowerQuery.includes('cómo funciona') || lowerQuery.includes('funcionamiento') || lowerQuery.includes('paso')) {
+        botReply = 'Funciona de manera muy sencilla:\n1. Creas tu bot configurando su nombre e imagen.\n2. Lo entrenas (alimentas) con tus archivos PDF, URLs de tu web o FAQs.\n3. Copias la etiqueta <script> de integración desde Ajustes.\n4. La pegas en tu HTML, Shopify o WordPress. ¡Y listo! El bot responderá usando RAG y GPT-4o-mini.';
+      }
+      // 6. Entrenamiento / Cómo entrenar / Fuentes de datos
+      else if (lowerQuery.includes('entrenar') || lowerQuery.includes('entrena') || lowerQuery.includes('enseñar') || lowerQuery.includes('enseña') || lowerQuery.includes('aprende') || lowerQuery.includes('pdf') || lowerQuery.includes('url') || lowerQuery.includes('faq')) {
+        botReply = 'Puedes entrenar a tu asistente en la sección "Enseñar a Assistly". Tienes 4 métodos de aprendizaje:\n- **FAQs:** Preguntas y respuestas hechas por ti.\n- **Texto:** Escribir información manualmente.\n- **PDFs:** Cargar catálogos, manuales o políticas.\n- **URLs:** Ingresar tu sitio web para que el bot lo lea por completo.';
+      }
+      // 7. Instalación / Integración / Insertar en web
+      else if (lowerQuery.includes('instalar') || lowerQuery.includes('instalacion') || lowerQuery.includes('instalación') || lowerQuery.includes('integrar') || lowerQuery.includes('integracion') || lowerQuery.includes('integración') || lowerQuery.includes('widget') || lowerQuery.includes('script') || lowerQuery.includes('html') || lowerQuery.includes('shopify') || lowerQuery.includes('wordpress')) {
+        botReply = 'Para instalar el widget, ve a la sección de "Ajustes" de tu bot, copia el script inyectable generado (ej. <script src=".../widget.js" data-bot-id="..."></script>) y pégalo antes del cierre de la etiqueta </head> o <body> del código de tu página web.';
+      }
+      // 8. Planes / Precios / Costo
+      else if (lowerQuery.includes('planes') || lowerQuery.includes('precio') || lowerQuery.includes('costo') || lowerQuery.includes('gratis') || lowerQuery.includes('free') || lowerQuery.includes('pro') || lowerQuery.includes('pago') || lowerQuery.includes('suscripcion')) {
+        botReply = 'Ofrecemos dos planes principales:\n- **Plan Free ($0/mes):** 1 bot activo, 50 chats al mes, entrenamiento con FAQs y texto.\n- **Plan Pro ($19/mes):** 3 bots activos, chats ilimitados, crawler de URLs/sitios web y soporte prioritario por correo.';
+      }
+      // 9. Contacto / Soporte / Ayuda
+      else if (lowerQuery.includes('contacto') || lowerQuery.includes('soporte') || lowerQuery.includes('correo') || lowerQuery.includes('email') || lowerQuery.includes('ayuda') || lowerQuery.includes('email') || lowerQuery.includes('mail')) {
+        botReply = 'Puedes ponerte en contacto con el equipo comercial o de soporte de Assistly escribiéndonos directamente a **soporte@assistly.com** o visitando nuestra web oficial en https://assistly.com.';
+      }
+      // 10. Fallback genérico
+      else {
         botReply = fallbackMessage;
       }
     } else {
