@@ -33,41 +33,43 @@ export default async function DashboardLayout({
   }
 
   // Buscar si posee una suscripción de prueba activa (TRIAL)
-  const activeSubscription = await prisma.subscription.findFirst({
-    where: {
-      workspaceId: membership.workspace.id,
-      status: 'TRIAL',
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-
   let trialDaysRemaining: number | null = null;
 
-  if (activeSubscription) {
-    const nowTime = Date.now();
-    const endTime = activeSubscription.currentPeriodEnd.getTime();
+  if (membership && membership.workspace) {
+    const activeSubscription = await prisma.subscription.findFirst({
+      where: {
+        workspaceId: membership.workspace.id,
+        status: 'TRIAL',
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-    if (endTime <= nowTime) {
-      // Si el período de 7 días expiró, degradamos el plan del workspace a EXPIRED
-      if (membership.workspace.plan === 'STARTER') {
-        await prisma.workspace.update({
-          where: { id: membership.workspace.id },
-          data: { plan: 'EXPIRED' },
-        });
-        membership.workspace.plan = 'EXPIRED';
+    if (activeSubscription) {
+      const nowTime = Date.now();
+      const endTime = activeSubscription.currentPeriodEnd.getTime();
+
+      if (endTime <= nowTime) {
+        // Si el período de 7 días expiró, degradamos el plan del workspace a EXPIRED
+        if (membership.workspace.plan === 'STARTER') {
+          await prisma.workspace.update({
+            where: { id: membership.workspace.id },
+            data: { plan: 'EXPIRED' },
+          });
+          membership.workspace.plan = 'EXPIRED';
+        }
+      } else {
+        const diffTime = endTime - nowTime;
+        trialDaysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
       }
-    } else {
-      const diffTime = endTime - nowTime;
-      trialDaysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     }
   }
 
   return (
     <ClerkProvider>
       <DashboardLayoutClient 
-        workspaceName={membership.workspace.name}
+        workspaceName={membership?.workspace?.name || 'Mi Negocio'}
         trialDaysRemaining={trialDaysRemaining}
       >
         {children}
