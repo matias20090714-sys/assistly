@@ -9,6 +9,9 @@ export async function GET() {
     return NextResponse.json({
       status: 'healthy',
       database: 'connected',
+      openai_key_present: !!process.env.OPENAI_API_KEY,
+      gemini_key_present: !!process.env.GEMINI_API_KEY,
+      gemini_key_length: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
