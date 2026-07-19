@@ -24,9 +24,7 @@ interface InboxClientProps {
 export function InboxClient({ botId, initialConversations }: InboxClientProps) {
   const router = useRouter();
   const [conversations, setConversations] = React.useState(initialConversations);
-  const [activeId, setActiveId] = React.useState<string | null>(
-    initialConversations.length > 0 ? initialConversations[0].id : null
-  );
+  const [activeId, setActiveId] = React.useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filter, setFilter] = React.useState<'all' | 'ia' | 'manual'>('all');
@@ -40,7 +38,12 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
   // Sincronizar conversaciones desde el servidor
   React.useEffect(() => {
     setConversations(initialConversations);
-    if (initialConversations.length > 0 && !activeId) {
+    if (
+      initialConversations.length > 0 && 
+      !activeId && 
+      typeof window !== 'undefined' && 
+      window.innerWidth >= 768
+    ) {
       setActiveId(initialConversations[0].id);
     }
   }, [initialConversations]);
@@ -159,7 +162,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
+    <div className="h-[calc(100dvh-13rem)] md:h-[calc(100vh-8rem)] rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
       
       {/* ================= COLUMNA IZQUIERDA: LISTADO DE CHATS ================= */}
       <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card/60 ${activeId ? 'hidden md:flex' : 'flex'}`}>
@@ -315,12 +318,14 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
                 ) : activeChat.status === 'ACTIVE' ? (
                   <>
                     <User className="h-3.5 w-3.5 mr-1.5" />
-                    <span>Tomar Control</span>
+                    <span className="hidden sm:inline">Tomar Control</span>
+                    <span className="sm:hidden">Pausar IA</span>
                   </>
                 ) : (
                   <>
                     <Bot className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                    <span>Devolver a la IA</span>
+                    <span className="hidden sm:inline">Devolver a la IA</span>
+                    <span className="sm:hidden">Activar IA</span>
                   </>
                 )}
               </button>
