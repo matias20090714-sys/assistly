@@ -162,7 +162,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
   };
 
   return (
-    <div className="h-[calc(100dvh-13rem)] md:h-[calc(100vh-8rem)] rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
+    <div className="h-[calc(100dvh-7.5rem)] md:h-[calc(100vh-8rem)] rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
       
       {/* ================= COLUMNA IZQUIERDA: LISTADO DE CHATS ================= */}
       <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card/60 ${activeId ? 'hidden md:flex' : 'flex'}`}>
@@ -280,7 +280,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
         {activeChat ? (
           <>
             {/* Header de Chat */}
-            <div className="h-16 px-6 border-b border-border bg-card flex items-center justify-between shrink-0">
+            <div className="h-14 md:h-16 px-3 md:px-6 border-b border-border bg-card flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 {/* Botón Atrás Móvil */}
                 <button
@@ -332,7 +332,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
             </div>
 
             {/* Burbujas del Chat */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4">
               {activeChat.messages.length === 0 ? (
                 <div className="text-center py-10 text-xs text-muted-foreground">
                   Comienza la conversación enviando un mensaje.
@@ -385,7 +385,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
             </div>
 
             {/* Input Composer */}
-            <div className="p-4 border-t border-border bg-card shrink-0">
+            <div className="p-3 md:p-4 border-t border-border bg-card shrink-0">
               <form onSubmit={handleSend} className="flex gap-2">
                 <input
                   type="text"
