@@ -42,6 +42,7 @@ export function DashboardLayoutClient({
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const isInbox = pathname === '/inbox';
 
   return (
     <div className="flex h-screen h-[100dvh] bg-background overflow-hidden">
@@ -203,7 +204,7 @@ export function DashboardLayoutClient({
         </header>
 
         {/* Dynamic Page view wrapper */}
-        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto bg-muted/20 p-2 sm:p-6 md:p-8">
+        <main className={`flex-1 min-h-0 flex flex-col bg-muted/20 p-2 sm:p-6 md:p-8 ${isInbox ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           <div className="max-w-7xl mx-auto w-full flex-1 min-h-0 flex flex-col space-y-2 md:space-y-6">
             {trialDaysRemaining !== null && trialDaysRemaining !== undefined && (
               <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium animate-in fade-in duration-200">
