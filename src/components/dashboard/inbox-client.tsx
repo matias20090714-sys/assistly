@@ -165,7 +165,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
     <div className="flex-1 min-h-0 h-full rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
       
       {/* ================= COLUMNA IZQUIERDA: LISTADO DE CHATS ================= */}
-      <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card/60 ${activeId ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-80 border-r border-border flex flex-col min-h-0 bg-card/60 ${activeId ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Buscador */}
         <div className="p-4 border-b border-border">
@@ -279,7 +279,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
       </div>
 
       {/* ================= COLUMNA DERECHA: CHAT COMPLETO ================= */}
-      <div className={`flex-1 flex flex-col bg-muted/10 ${!activeId ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 min-h-0 h-full flex flex-col bg-muted/10 ${!activeId ? 'hidden md:flex' : 'flex'}`}>
         {activeChat ? (
           <>
             {/* Header de Chat */}
