@@ -199,7 +199,10 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
         </div>
 
         {/* Lista de Chats */}
-        <div className="flex-1 overflow-y-auto divide-y divide-border/60">
+        <div 
+          className="flex-1 overflow-y-auto divide-y divide-border/60 overscroll-contain touch-pan-y"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {filteredConversations.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground space-y-4">
               <p>No se encontraron conversaciones.</p>
@@ -332,7 +335,11 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
             </div>
 
             {/* Burbujas del Chat */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4">
+            <div 
+              ref={scrollRef} 
+              className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-3 md:p-6 space-y-3 md:space-y-4"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {activeChat.messages.length === 0 ? (
                 <div className="text-center py-10 text-xs text-muted-foreground">
                   Comienza la conversación enviando un mensaje.
@@ -396,7 +403,9 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
                   }
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-base md:text-xs focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  enterKeyHint="send"
+                  autoComplete="off"
                   required
                 />
                 <button
