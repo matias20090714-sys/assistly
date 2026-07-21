@@ -162,7 +162,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
   };
 
   return (
-    <div className="h-[calc(100dvh-7.5rem)] md:h-[calc(100vh-8rem)] rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
+    <div className="flex-1 min-h-0 h-full rounded-xl border border-border bg-card overflow-hidden flex flex-col md:flex-row shadow-sm">
       
       {/* ================= COLUMNA IZQUIERDA: LISTADO DE CHATS ================= */}
       <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card/60 ${activeId ? 'hidden md:flex' : 'flex'}`}>
@@ -187,7 +187,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`flex-1 py-1.5 rounded-md uppercase tracking-wider transition-colors ${
+              className={`flex-1 py-1.5 rounded-md uppercase tracking-wider transition-colors cursor-pointer touch-manipulation ${
                 filter === tab
                   ? 'bg-background text-primary shadow-sm border border-border/20'
                   : 'text-muted-foreground hover:bg-background/40 hover:text-foreground'
@@ -207,7 +207,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
                 <button
                   onClick={handleSeed}
                   disabled={isSeeding}
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-white shadow-md hover:bg-primary/95 disabled:opacity-50 transition-all active:scale-95"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-white shadow-md hover:bg-primary/95 disabled:opacity-50 transition-all active:scale-95 cursor-pointer touch-manipulation"
                 >
                   {isSeeding ? (
                     <>
@@ -234,7 +234,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
                 <button
                   key={conv.id}
                   onClick={() => setActiveId(conv.id)}
-                  className={`w-full p-4 text-left flex items-start gap-3 transition-colors ${
+                  className={`w-full p-4 text-left flex items-start gap-3 transition-colors cursor-pointer touch-manipulation ${
                     isSelected ? 'bg-muted/40 border-l-2 border-primary' : 'hover:bg-muted/20'
                   }`}
                 >
@@ -285,7 +285,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
                 {/* Botón Atrás Móvil */}
                 <button
                   onClick={() => setActiveId(null)}
-                  className="p-1 rounded-md hover:bg-accent md:hidden text-foreground mr-1"
+                  className="p-1 rounded-md hover:bg-accent md:hidden text-foreground mr-1 cursor-pointer touch-manipulation"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
@@ -307,7 +307,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
               <button
                 onClick={handleToggleControl}
                 disabled={isToggling}
-                className={`inline-flex h-9 items-center justify-center px-4 rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-95 ${
+                className={`inline-flex h-9 items-center justify-center px-4 rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation ${
                   activeChat.status === 'ACTIVE'
                     ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-500/10'
                     : 'border border-border bg-background text-foreground hover:bg-accent'
@@ -402,7 +402,7 @@ export function InboxClient({ botId, initialConversations }: InboxClientProps) {
                 <button
                   type="submit"
                   disabled={isSending || !replyText.trim()}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/10 hover:bg-primary/95 transition-all disabled:opacity-50 active:scale-95 shrink-0"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/10 hover:bg-primary/95 transition-all disabled:opacity-50 active:scale-95 shrink-0 cursor-pointer touch-manipulation"
                 >
                   {isSending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

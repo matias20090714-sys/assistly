@@ -51,7 +51,7 @@ export default async function InboxPage() {
   });
 
   return (
-    <div className="space-y-2 md:space-y-6 h-full flex flex-col">
+    <div className="space-y-0 md:space-y-6 h-full flex-1 min-h-0 flex flex-col">
       {/* Cabecera (solo en pantallas de escritorio) */}
       <div className="shrink-0 hidden md:block">
         <h1 className="text-3xl font-bold tracking-tight">Bandeja de Entrada</h1>
@@ -60,7 +60,7 @@ export default async function InboxPage() {
         </p>
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 h-full flex flex-col">
         <InboxClient botId={bot.id} initialConversations={conversations} />
       </div>
     </div>

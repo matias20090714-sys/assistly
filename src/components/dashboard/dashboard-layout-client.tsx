@@ -44,7 +44,7 @@ export function DashboardLayoutClient({
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen h-[100dvh] bg-background overflow-hidden">
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex md:w-64 md:flex-col border-r border-border bg-card">
         <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
@@ -203,8 +203,8 @@ export function DashboardLayoutClient({
         </header>
 
         {/* Dynamic Page view wrapper */}
-        <main className="flex-1 overflow-y-auto bg-muted/20 p-2 sm:p-6 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-2 md:space-y-6">
+        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto bg-muted/20 p-2 sm:p-6 md:p-8">
+          <div className="max-w-7xl mx-auto w-full flex-1 min-h-0 flex flex-col space-y-2 md:space-y-6">
             {trialDaysRemaining !== null && trialDaysRemaining !== undefined && (
               <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium animate-in fade-in duration-200">
                 <div className="flex items-center gap-2">
